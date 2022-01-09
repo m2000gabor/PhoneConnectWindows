@@ -11,7 +11,5 @@ public class Main {
         WelcomeScreen welcomeScreen = new WelcomeScreen();
         Controller controller = new Controller(server, welcomeScreen );
         controller.start();
-
-        try {Thread.sleep( 60000 );} catch( Exception e ){e.printStackTrace();}
     }
 }

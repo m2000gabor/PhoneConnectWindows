@@ -1,65 +1,104 @@
 package hu.elte.sbzbxr.model;
 
-import hu.elte.sbzbxr.controller.Controller;
-
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class ServerMain
 {
-    public static final int SERVER_PORT = 5000;
+    public static final int BUFFER_SIZE = 4096;
+    ConnectionManager connectionManager;
 
+    public ServerMain() {connectionManager=new ConnectionManager();}
 
-    private SocketAddress serverAddress = new InetSocketAddress(SERVER_PORT);
-    private AsynchronousServerSocketChannel listener;
-    private Controller controller;
+    /**
+     *
+     * @return Address it's listening to
+     */
+    public SocketAddress start() {
+        SocketAddress address =connectionManager.init();
+        connectionManager.startServer(this);
+        return address;
+    }
 
-    public void init(){
+    //From: https://gist.github.com/teocci/0187ac32dcdbd57d8aaa89342be90f89
+    public void connectionEstablished(AsynchronousSocketChannel ch){
+        // Greet the client
+        ch.write( ByteBuffer.wrap( "Hello, I am Echo Server 2020, let's have an engaging conversation!\n".getBytes() ) );
+
+        // Allocate a byte buffer (4K) to read from the client
+        ByteBuffer byteBuffer = ByteBuffer.allocate( BUFFER_SIZE );
         try
         {
-            // Create an AsynchronousServerSocketChannel that will listen on port 5000
-            listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(SERVER_PORT));
-            serverAddress = listener.getLocalAddress();
+            // Read the first line
+            int bytesRead = ch.read( byteBuffer ).get( 20, TimeUnit.SECONDS );
+
+            boolean running = true;
+            while( bytesRead != -1 && running )
+            {
+                System.out.println( "bytes read: " + bytesRead );
+
+                // Make sure that we have data to read
+                if( byteBuffer.position() > 2 )
+                {
+                    // Make the buffer ready to read
+                    byteBuffer.flip();
+
+                    // Convert the buffer into a line
+                    byte[] lineBytes = new byte[ bytesRead ];
+                    byteBuffer.get( lineBytes, 0, bytesRead );
+                    String line = new String( lineBytes );
+
+                    // Debug
+                    System.out.println( "Message: " + line );
+                    ///todo send to the view
+
+                    // Echo back to the caller
+                    ch.write( ByteBuffer.wrap( line.getBytes() ) );
+
+                    // Make the buffer ready to write
+                    byteBuffer.clear();
+
+                    // Read the next line
+                    bytesRead = ch.read( byteBuffer ).get( 10, TimeUnit.SECONDS );
+                }
+                else
+                {
+                    // An empty line signifies the end of the conversation in our protocol
+                    running = false;
+                }
+            }
         }
-        catch (IOException e)
+        catch (InterruptedException | ExecutionException e)
         {
             e.printStackTrace();
+        } catch (TimeoutException e)
+        {
+            // The user exceeded the 10 second timeout, so close the connection
+            ch.write( ByteBuffer.wrap( "Good Bye\n".getBytes() ) );
+            System.out.println( "Connection timed out(10 sec), closing connection" );
+        }
+
+        System.out.println( "End of conversation" );
+        try
+        {
+            // Close the connection if we need to
+            if( ch.isOpen() )
+            {
+                ch.close();
+            }
+        }
+        catch (IOException e1)
+        {
+            e1.printStackTrace();
         }
     }
 
-    public void startServer(Controller owner){
-        controller = owner;
-
-        // Listen for a new request
-        listener.accept( null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
-
-            @Override
-            public void completed(AsynchronousSocketChannel ch, Void att)
-            {
-                // Accept the next connection
-                listener.accept( null, this );
-                controller.connectionEstablished(ch);
-            }
-
-            @Override
-            public void failed(Throwable exc, Void att) {
-               controller.connectionFailed(exc);
-            }
-        });
+    public void connectionFailed(Throwable exc){
+        System.err.println(exc.getMessage());
     }
-
-    public ServerMain(){}
-
-    public SocketAddress getServerAddress() {
-        return serverAddress;
-    }
-
 }
