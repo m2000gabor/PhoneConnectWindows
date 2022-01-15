@@ -1,8 +1,9 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.model.connection;
+
+import hu.elte.sbzbxr.model.ServerMain;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.Collections;
@@ -11,8 +12,9 @@ import java.util.Enumeration;
 public class ConnectionManager {
     private static final int SERVER_PORT = 5000;
 
-    private AsynchronousServerSocketChannel listener;
+    private ServerSocket serverSocket;
     private ServerMain serverMain;
+    private Socket client;
 
     public ConnectionManager(){}
 
@@ -25,7 +27,7 @@ public class ConnectionManager {
         {
             // Create an AsynchronousServerSocketChannel that will listen on port 5000
             //System.out.println("getPublicIpAddress() = " + getPublicIpAddress().toString());
-            listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(getPublicIpAddress(),SERVER_PORT));
+            serverSocket = new ServerSocket(SERVER_PORT,0,getPublicIpAddress());
             return getServerAddress();
         }
         catch (IOException e)
@@ -50,26 +52,19 @@ public class ConnectionManager {
         return null;
     }
 
-    public SocketAddress getServerAddress() throws IOException {return listener.getLocalAddress();}
+    public SocketAddress getServerAddress() throws IOException {return serverSocket.getLocalSocketAddress();}
 
     public void startServer(ServerMain owner){
         serverMain = owner;
-
-        // Listen for a new request
-        listener.accept( null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
-
-            @Override
-            public void completed(AsynchronousSocketChannel ch, Void att)
-            {
-                // Accept the next connection
-                listener.accept( null, this );
-                serverMain.connectionEstablished(ch);
+        new Thread(() -> {
+            // Listen for a new request
+            try {
+                System.out.println("Waiting for connection");
+                client = serverSocket.accept();
+                serverMain.connectionEstablished(client.getInputStream(), client.getOutputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-            @Override
-            public void failed(Throwable exc, Void att) {
-                serverMain.connectionFailed(exc);
-            }
-        });
+        }).start();
     }
 }

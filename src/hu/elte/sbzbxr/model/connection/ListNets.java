@@ -1,4 +1,4 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.model.connection;
 
 import java.io.*;
 import java.net.*;
