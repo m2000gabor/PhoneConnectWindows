@@ -1,11 +1,9 @@
 package hu.elte.sbzbxr.model.connection;
 
-import hu.elte.sbzbxr.model.ServerMain;
+import hu.elte.sbzbxr.model.ServerMainModel;
 
 import java.io.IOException;
 import java.net.*;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -13,7 +11,7 @@ public class ConnectionManager {
     private static final int SERVER_PORT = 5000;
 
     private ServerSocket serverSocket;
-    private ServerMain serverMain;
+    private ServerMainModel serverMainModel;
     private Socket client;
 
     public ConnectionManager(){}
@@ -54,17 +52,20 @@ public class ConnectionManager {
 
     public SocketAddress getServerAddress() throws IOException {return serverSocket.getLocalSocketAddress();}
 
-    public void startServer(ServerMain owner){
-        serverMain = owner;
-        new Thread(() -> {
-            // Listen for a new request
-            try {
-                System.out.println("Waiting for connection");
-                client = serverSocket.accept();
-                serverMain.connectionEstablished(client.getInputStream(), client.getOutputStream());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }).start();
+    public void startServer(ServerMainModel owner){
+        serverMainModel = owner;
+        // Listen for a new request
+        new Thread(this::restartServer).start();
+    }
+
+    public void restartServer(){
+        try {
+            if(client!=null){client.close();}
+            System.out.println("Waiting for connection");
+            client = serverSocket.accept();
+            serverMainModel.connectionEstablished(client.getInputStream(), client.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

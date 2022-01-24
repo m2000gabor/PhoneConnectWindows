@@ -1,9 +1,12 @@
 package hu.elte.sbzbxr.view;
 
+import hu.elte.sbzbxr.controller.Controller;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class WelcomeScreen extends JFrame {
+    private Controller controller;
     JPanel northPanel;
     JLabel ipAddressLabel;
     JLabel connectionLabel;
@@ -22,8 +25,9 @@ public class WelcomeScreen extends JFrame {
         ipAddressLabel =new JLabel("Ip:"+ "unknown");
         northPanel.add(ipAddressLabel);
 
-        connectionLabel =new JLabel("Not connected");
+        connectionLabel =new JLabel();
         northPanel.add(connectionLabel);
+        setConnectionLabel(false);
 
         messageLabel =new JLabel("");
         northPanel.add(messageLabel);
@@ -34,7 +38,6 @@ public class WelcomeScreen extends JFrame {
         setPreferredSize(new Dimension(300,300));
         pack();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setResizable(false);
         setVisible(true);
     }
 
@@ -47,7 +50,19 @@ public class WelcomeScreen extends JFrame {
         }
     }
 
+    public void setController(Controller controller) {
+        this.controller = controller;
+    }
+
     public void setIpAddress(String ipAddress){
         ipAddressLabel.setText(ipAddress);
+    }
+
+    public void setConnectionLabel(boolean b){
+        if (b){
+            connectionLabel.setText("Connected");
+        }else{
+            connectionLabel.setText("Not connected");
+        }
     }
 }

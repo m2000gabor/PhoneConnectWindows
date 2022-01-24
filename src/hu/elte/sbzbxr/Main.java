@@ -1,15 +1,16 @@
 package hu.elte.sbzbxr;
 
 import hu.elte.sbzbxr.controller.Controller;
-import hu.elte.sbzbxr.model.ServerMain;
+import hu.elte.sbzbxr.model.ServerMainModel;
 import hu.elte.sbzbxr.view.WelcomeScreen;
 
 public class Main {
 
     public static void main(String[] args) {
-        ServerMain server = new ServerMain();
+        ServerMainModel server = new ServerMainModel();
         WelcomeScreen welcomeScreen = new WelcomeScreen();
         Controller controller = new Controller(server, welcomeScreen );
+        controller.init();
         controller.start();
     }
 }
