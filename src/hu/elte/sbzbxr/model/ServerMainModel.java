@@ -9,6 +9,7 @@ import java.net.SocketAddress;
 
 public class ServerMainModel
 {
+    private static final boolean SAVE_TO_FILE = false;
     private Controller controller;
     private ConnectionManager connectionManager;
     boolean isRunning=false;
@@ -40,7 +41,7 @@ public class ServerMainModel
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                //stopConnection();
+                stopConnection();
                 connectionManager.restartServer();
             }
         }
@@ -59,30 +60,47 @@ public class ServerMainModel
     }
 
     private void reactToSegmentArrivedRequest(MyNetworkProtocolFrame frame){
-        String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "videos";
+        if(SAVE_TO_FILE){saveSegmentToFile(frame);}
+        Picture picture=Picture.create(frame.getName(), frame.getData());
+        if(!isStreaming){
+            controller.startStreaming(picture);
+            isStreaming=true;// If this is the first segment, start the streaming
+        }
+        controller.segmentArrived(picture);
+    }
+
+    @Deprecated
+    private void saveSegmentToFile(MyNetworkProtocolFrame frame){
+        //Main pictures folder
+        String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "pictures";
         directoryPath = directoryPath.substring(6);
         File directory = new File(directoryPath);
         if (! directory.exists()){
             if(directory.mkdir()){
-                System.err.println("Videos directory created at: "+directoryPath);
+                System.err.println("Pictures directory created at: "+directoryPath);
             }
         }
 
-        File outputFile = new File(directoryPath+"/"+frame.getName());
+        //current timestamped folder
+        String timestamp= frame.getName().split("__part")[0];
+        directoryPath = directoryPath + "/" + timestamp;
+        directory = new File(directoryPath);
+        if (! isStreaming){
+            if(directory.mkdir()){
+                System.err.println("New directory created at: "+directoryPath);
+            }
+        }
+
+        File outputFile = new File(directoryPath+"\\"+frame.getName());
 
         try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
             outputStream.write(frame.getData());
             System.out.println("File saved to " + outputFile.getAbsolutePath());
             System.out.println(frame.getDataLength()+" bytes saved");
-
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Unable to save the file");
         }
-
-        if(!isStreaming){controller.startStreaming(directoryPath,outputFile.getName());isStreaming=true;}// If this is the first segment, start the streaming
-
-        controller.segmentArrived(outputFile);
     }
 
     public void connectionFailed(Throwable exc){
@@ -91,6 +109,7 @@ public class ServerMainModel
 
     public void stopConnection(){//todo show it in the ui?
         isRunning=false;
+        isStreaming=false;
     }
 
     public void setController(Controller controller) {

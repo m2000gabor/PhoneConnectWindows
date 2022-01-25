@@ -6,15 +6,17 @@ import uk.co.caprica.vlcj.player.base.MediaPlayer;
 import java.io.File;
 import java.util.concurrent.ArrayBlockingQueue;
 
+@Deprecated
 public class VideoProvider {
     private final VideoNameManager videoNameManager;
-    private final ArrayBlockingQueue<String> arrived = new ArrayBlockingQueue<String>(10);
+    private final ArrayBlockingQueue<String> arrived = new ArrayBlockingQueue<String>(100);
 
     public VideoProvider(VideoNameManager videoNameManager) {
         this.videoNameManager = videoNameManager;
     }
 
     public void askNextVideo(Controller controller){
+        /*
         String next = arrived.poll();
         if(next!=null){
             controller.playVideo(next);
@@ -31,10 +33,11 @@ public class VideoProvider {
                 }
             }).start();
         }
+         */
     }
 
     public void segmentArrived(String path){
-        if(!arrived.add(path)){
+        if(!arrived.offer(path)){
             System.err.println("To much segment arrived, one is thrown");
         }
     }
