@@ -37,6 +37,7 @@ public class ServerMainModel
                 switch (frame.getType()) {
                     case PROTOCOL_PING -> reactToPingRequest(frame, o);
                     case PROTOCOL_SEGMENT -> reactToSegmentArrivedRequest(frame);
+                    case PROTOCOL_NOTIFICATION -> reactToNotificationArrived(frame);
                     default -> throw new RuntimeException("Unhandled type");
                 }
             } catch (IOException e) {
@@ -57,6 +58,11 @@ public class ServerMainModel
             e.printStackTrace();
             System.err.println("Unable to send the answer to the ping request");
         }
+    }
+
+    private void reactToNotificationArrived(MyNetworkProtocolFrame frame){
+        SendableNotification notification = new SendableNotification(frame.getData());
+        controller.showNotification(notification);
     }
 
     private void reactToSegmentArrivedRequest(MyNetworkProtocolFrame frame){

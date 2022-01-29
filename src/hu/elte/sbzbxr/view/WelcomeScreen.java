@@ -39,6 +39,13 @@ public class WelcomeScreen extends JFrame {
         pack();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
+
+        /*
+        try {
+            Controller.displayTray(null);
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }*/
     }
 
     private void setFancyLookAndFeel() {
