@@ -28,6 +28,7 @@ public class ImageCanvas extends Canvas {
         originalImage=img;
         currentImage=getScaledBufferedImage(originalImage,getWidth(),getHeight());
         repaint();
+
     }
 
     @Override
