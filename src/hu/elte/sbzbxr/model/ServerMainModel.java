@@ -38,6 +38,7 @@ public class ServerMainModel
                     case PROTOCOL_PING -> reactToPingRequest(frame, o);
                     case PROTOCOL_SEGMENT -> reactToSegmentArrivedRequest(frame);
                     case PROTOCOL_NOTIFICATION -> reactToNotificationArrived(frame);
+                    case PROTOCOL_FILE -> reactToIncomingFileTransfer(frame);
                     default -> throw new RuntimeException("Unhandled type");
                 }
             } catch (IOException e) {
@@ -66,7 +67,7 @@ public class ServerMainModel
     }
 
     private void reactToSegmentArrivedRequest(MyNetworkProtocolFrame frame){
-        if(SAVE_TO_FILE){saveSegmentToFile(frame);}
+        if(SAVE_TO_FILE){saveSegmentToFile(frame,true);}
         Picture picture=Picture.create(frame.getName(), frame.getData());
         if(!isStreaming){
             controller.startStreaming(picture);
@@ -75,25 +76,30 @@ public class ServerMainModel
         controller.segmentArrived(picture);
     }
 
-    @Deprecated
-    private void saveSegmentToFile(MyNetworkProtocolFrame frame){
+    private void reactToIncomingFileTransfer(MyNetworkProtocolFrame frame){
+        saveSegmentToFile(frame,false);
+    }
+
+    private void saveSegmentToFile(MyNetworkProtocolFrame frame,boolean isSegment){
         //Main pictures folder
-        String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "pictures";
+        String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "saves";
         directoryPath = directoryPath.substring(6);
         File directory = new File(directoryPath);
         if (! directory.exists()){
             if(directory.mkdir()){
-                System.err.println("Pictures directory created at: "+directoryPath);
+                System.err.println("Saves directory created at: "+directoryPath);
             }
         }
 
         //current timestamped folder
-        String timestamp= frame.getName().split("__part")[0];
-        directoryPath = directoryPath + "/" + timestamp;
-        directory = new File(directoryPath);
-        if (! isStreaming){
-            if(directory.mkdir()){
-                System.err.println("New directory created at: "+directoryPath);
+        if(isSegment){
+            String timestamp= frame.getName().split("__part")[0];
+            directoryPath = directoryPath + "/" + timestamp;
+            directory = new File(directoryPath);
+            if (! isStreaming){
+                if(directory.mkdir()){
+                    System.err.println("New directory created at: "+directoryPath);
+                }
             }
         }
 
