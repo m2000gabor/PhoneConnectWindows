@@ -1,13 +1,16 @@
 package hu.elte.sbzbxr.view;
 
 import hu.elte.sbzbxr.controller.Controller;
+import hu.elte.sbzbxr.model.QrGenerator;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class WelcomeScreen extends JFrame {
     private Controller controller;
+    ImageCanvas canvas;
     JPanel northPanel;
+    JPanel centerPanel;
     JLabel ipAddressLabel;
     JLabel connectionLabel;
     JLabel messageLabel;
@@ -32,20 +35,24 @@ public class WelcomeScreen extends JFrame {
         messageLabel =new JLabel("");
         northPanel.add(messageLabel);
 
+        //Center
+        centerPanel = new JPanel(new BorderLayout());
+        canvas = new ImageCanvas();
+        centerPanel.add( canvas, BorderLayout.CENTER );
+
         //UI final moves
         add(northPanel,BorderLayout.NORTH);
+        add(centerPanel,BorderLayout.CENTER);
         setTitle("PhoneConnect");
         setPreferredSize(new Dimension(300,300));
         pack();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
 
-        /*
-        try {
-            Controller.displayTray(null);
-        } catch (AWTException e) {
-            e.printStackTrace();
-        }*/
+    }
+
+    private void setupQrCode(String str){
+        canvas.showImage(QrGenerator.getQr(str));
     }
 
     private void setFancyLookAndFeel() {
@@ -62,7 +69,8 @@ public class WelcomeScreen extends JFrame {
     }
 
     public void setIpAddress(String ipAddress){
-        ipAddressLabel.setText(ipAddress);
+        ipAddressLabel.setText("IP address and port: " + ipAddress);
+        setupQrCode(ipAddress);
     }
 
     public void setConnectionLabel(boolean b){

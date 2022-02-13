@@ -19,7 +19,7 @@ public class MainScreenJPG extends JFrame {
     JLabel ipAddressLabel;
     JLabel connectionLabel;
     JLabel messageLabel;
-    Canvas canvas;
+    ImageCanvas canvas;
 
 
     public MainScreenJPG(SocketAddress serverAddress){
@@ -51,7 +51,7 @@ public class MainScreenJPG extends JFrame {
 
         //Video panel
         centerPanel = new JPanel(new BorderLayout());
-        canvas = new Canvas();
+        canvas = new ImageCanvas();
         centerPanel.add( canvas, BorderLayout.CENTER );
 
 
@@ -84,45 +84,27 @@ public class MainScreenJPG extends JFrame {
     }
 
     public void showPicture(BufferedImage img){
-        img=resizeImage(img,canvas.getWidth(),canvas.getHeight());
+        canvas.showImage(img);
+        /*
+        img=ImageCanvas.resizeImage(img,canvas.getWidth(),canvas.getHeight());
         Graphics graphics = canvas.getGraphics();
         if (graphics != null) {
             graphics.drawImage(img,0,0,null);
             graphics.dispose();
-        }
+        }*/
     }
 
     public void showPictureFromFile(String path){
         System.out.println("showPicture called");
         try {
             BufferedImage img = ImageIO.read(new File(path));
-            img=resizeImage(img,canvas.getWidth(),canvas.getHeight());
-            Graphics graphics = canvas.getGraphics();
-            if (graphics != null) {
-                graphics.drawImage(img,0,0,null);
-                graphics.dispose();
-                //canvas.revalidate();
-            }else{
-                System.err.println("Graphics is null");
-            }
+            showPicture(img);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void initVideoPlayer() {
-        Dimension maximumSize = canvas.getMaximumSize();
         showPictureFromFile("C:\\Users\\Gabor\\egyetem\\5felev_20_21_osz\\szakdoga\\vidik\\jpgStream_sample\\PhoneC_24_Jan_2022_11_49_06__part24.jpg");//todo change it
-    }
-
-    public static BufferedImage resizeImage(BufferedImage img, int newW, int newH) {
-        int w = img.getWidth();
-        int h = img.getHeight();
-        BufferedImage dimg = new BufferedImage(newW, newH, img.getType());
-        Graphics2D g = dimg.createGraphics();
-        //g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-        g.drawImage(img, 0, 0, newW, newH, 0, 0, w, h, null);
-        g.dispose();
-        return dimg;
     }
 }

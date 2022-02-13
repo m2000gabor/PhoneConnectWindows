@@ -26,8 +26,7 @@ public class Controller {
         if(Objects.isNull(serverAddress)){
             System.err.println("Failed to establish connection");
         }else{
-            welcomeScreen.setIpAddress(serverAddress.toString());
-
+            welcomeScreen.setIpAddress(serverAddress.toString().replace("/",""));
         }
     }
 
