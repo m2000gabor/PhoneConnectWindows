@@ -1,21 +1,20 @@
 package hu.elte.sbzbxr.controller;
 
+import hu.elte.sbzbxr.model.Picture;
+import hu.elte.sbzbxr.model.SendableNotification;
 import hu.elte.sbzbxr.model.ServerMainModel;
-import hu.elte.sbzbxr.model.VideoNameManager;
-import hu.elte.sbzbxr.view.MainScreen;
+import hu.elte.sbzbxr.view.MainScreenJPG;
 import hu.elte.sbzbxr.view.WelcomeScreen;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
-import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 
-import javax.swing.*;
-import java.io.File;
+import java.awt.*;
 import java.net.SocketAddress;
 import java.util.Objects;
 
 public class Controller {
     private final ServerMainModel model;
     private WelcomeScreen welcomeScreen;
-    private MainScreen mainScreen;
+    private MainScreenJPG mainScreen;
 
     public Controller(ServerMainModel model, WelcomeScreen view) {
         this.model = model;
@@ -27,11 +26,9 @@ public class Controller {
         if(Objects.isNull(serverAddress)){
             System.err.println("Failed to establish connection");
         }else{
-            welcomeScreen.setIpAddress(serverAddress.toString());
-
+            welcomeScreen.setIpAddress(serverAddress.toString().replace("/",""));
         }
     }
-
 
     public void init() {
         welcomeScreen.setController(this);
@@ -42,44 +39,64 @@ public class Controller {
         welcomeScreen.setConnectionLabel(true);
     }
 
-    private VideoProvider videoProvider;
-    public void startStreaming(String folderPath,String firstFileName){
-        mainScreen= new MainScreen(model.getServerAddress());
+    private PictureProvider pictureProvider;
+    public void startStreaming(Picture picture){
+        mainScreen= new MainScreenJPG(model.getServerAddress());
         mainScreen.setController(this);
 
-        videoProvider =new VideoProvider(new VideoNameManager(folderPath,firstFileName));
+        pictureProvider=new PictureProvider();
+        pictureProvider.pictureArrived(picture);
 
         welcomeScreen.dispose();
         mainScreen.initVideoPlayer();
-        videoProvider.askNextVideo(this);
+        pictureProvider.askNextPicture(this);
     }
 
-    private String currentlyPlayedVideoPath;
-    public void playVideo(String path){
-        currentlyPlayedVideoPath=path;
-        mainScreen.playVideo(path);
+    public void showPicture(Picture picture){
+        mainScreen.showPicture(picture.getImg());
+        pictureProvider.askNextPicture(this);
     }
 
     public void videoFinished(MediaPlayer mediaPlayer) {
-        videoProvider.askNextVideo(this);
-        deleteFile(currentlyPlayedVideoPath);
+        pictureProvider.askNextPicture(this);
     }
 
-    private void deleteFile(String currentlyPlayedVideoPath) {
-        /*
-        SwingUtilities.invokeLater( ()->{
-                    File file = new File(currentlyPlayedVideoPath);
-                    if(file.delete()){
-                        System.out.println("File deleted: "+file.getName());
-                    }else{
-                        System.out.println("Cannot delete file: "+file.getName());
-                    }
-                }
-        );
-        */
+    public void segmentArrived(Picture picture) {
+        pictureProvider.pictureArrived(picture);
     }
 
-    public void segmentArrived(File outputFile) {
-        videoProvider.segmentArrived(outputFile.getAbsolutePath());
+    public void showNotification(SendableNotification notification) {
+        System.out.println(notification);
+
+        //From: https://stackoverflow.com/questions/34490218/how-to-make-a-windows-notification-in-java
+        if (SystemTray.isSupported()) {
+            try {
+                displayTray(notification);
+            } catch (AWTException e) {
+                e.printStackTrace();
+                System.err.println("Cannot add Tray");
+            }
+        } else {
+            System.err.println("System tray not supported!");
+        }
+    }
+
+    public static void displayTray(SendableNotification notification) throws AWTException {
+        //Obtain only one instance of the SystemTray object
+        SystemTray tray = SystemTray.getSystemTray();
+
+        //If the icon is a file
+        Image image = Toolkit.getDefaultToolkit().createImage("resources/icon.jpg");
+        //Alternative (if the icon is on the classpath):
+        //Image image = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.png"));
+
+        TrayIcon trayIcon = new TrayIcon(image, "Tray Demo");
+        //Let the system resize the image if needed
+        trayIcon.setImageAutoSize(true);
+        //Set tooltip text for the tray icon
+        trayIcon.setToolTip("System tray icon demo");
+        tray.add(trayIcon);
+
+        trayIcon.displayMessage(notification.getTitle(), notification.getText(), TrayIcon.MessageType.INFO);
     }
 }

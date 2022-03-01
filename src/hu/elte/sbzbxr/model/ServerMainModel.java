@@ -9,6 +9,7 @@ import java.net.SocketAddress;
 
 public class ServerMainModel
 {
+    private static final boolean SAVE_TO_FILE = false;
     private Controller controller;
     private ConnectionManager connectionManager;
     boolean isRunning=false;
@@ -36,11 +37,13 @@ public class ServerMainModel
                 switch (frame.getType()) {
                     case PROTOCOL_PING -> reactToPingRequest(frame, o);
                     case PROTOCOL_SEGMENT -> reactToSegmentArrivedRequest(frame);
+                    case PROTOCOL_NOTIFICATION -> reactToNotificationArrived(frame);
+                    case PROTOCOL_FILE -> reactToIncomingFileTransfer(frame);
                     default -> throw new RuntimeException("Unhandled type");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                //stopConnection();
+                stopConnection();
                 connectionManager.restartServer();
             }
         }
@@ -58,31 +61,58 @@ public class ServerMainModel
         }
     }
 
+    private void reactToNotificationArrived(MyNetworkProtocolFrame frame){
+        SendableNotification notification = new SendableNotification(frame.getData());
+        controller.showNotification(notification);
+    }
+
     private void reactToSegmentArrivedRequest(MyNetworkProtocolFrame frame){
-        String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "videos";
+        if(SAVE_TO_FILE){saveSegmentToFile(frame,true);}
+        Picture picture=Picture.create(frame.getName(), frame.getData());
+        if(!isStreaming){
+            controller.startStreaming(picture);
+            isStreaming=true;// If this is the first segment, start the streaming
+        }
+        controller.segmentArrived(picture);
+    }
+
+    private void reactToIncomingFileTransfer(MyNetworkProtocolFrame frame){
+        saveSegmentToFile(frame,false);
+    }
+
+    private void saveSegmentToFile(MyNetworkProtocolFrame frame,boolean isSegment){
+        //Main pictures folder
+        String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "saves";
         directoryPath = directoryPath.substring(6);
         File directory = new File(directoryPath);
         if (! directory.exists()){
             if(directory.mkdir()){
-                System.err.println("Videos directory created at: "+directoryPath);
+                System.err.println("Saves directory created at: "+directoryPath);
             }
         }
 
-        File outputFile = new File(directoryPath+"/"+frame.getName());
+        //current timestamped folder
+        if(isSegment){
+            String timestamp= frame.getName().split("__part")[0];
+            directoryPath = directoryPath + "/" + timestamp;
+            directory = new File(directoryPath);
+            if (! isStreaming){
+                if(directory.mkdir()){
+                    System.err.println("New directory created at: "+directoryPath);
+                }
+            }
+        }
+
+        File outputFile = new File(directoryPath+"\\"+frame.getName());
 
         try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
             outputStream.write(frame.getData());
             System.out.println("File saved to " + outputFile.getAbsolutePath());
             System.out.println(frame.getDataLength()+" bytes saved");
-
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Unable to save the file");
         }
-
-        if(!isStreaming){controller.startStreaming(directoryPath,outputFile.getName());isStreaming=true;}// If this is the first segment, start the streaming
-
-        controller.segmentArrived(outputFile);
     }
 
     public void connectionFailed(Throwable exc){
@@ -91,6 +121,7 @@ public class ServerMainModel
 
     public void stopConnection(){//todo show it in the ui?
         isRunning=false;
+        isStreaming=false;
     }
 
     public void setController(Controller controller) {
