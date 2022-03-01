@@ -2,10 +2,14 @@ package hu.elte.sbzbxr.model;
 
 import hu.elte.sbzbxr.controller.Controller;
 import hu.elte.sbzbxr.model.connection.ConnectionManager;
-import hu.elte.sbzbxr.model.connection.MyNetworkProtocolFrame;
+import hu.elte.sbzbxr.model.connection.protocol.FrameType;
+import hu.elte.sbzbxr.model.connection.protocol.MyNetworkProtocolFrame;
 
+import javax.naming.InvalidNameException;
 import java.io.*;
 import java.net.SocketAddress;
+import java.security.InvalidParameterException;
+import java.util.Optional;
 
 public class ServerMainModel
 {
@@ -52,7 +56,7 @@ public class ServerMainModel
     private void reactToPingRequest(MyNetworkProtocolFrame frame,OutputStream outputStream){
         String receivedMsg = new String(frame.getData());
         System.out.println("Received ping message: "+receivedMsg);
-        MyNetworkProtocolFrame answerFrame = new MyNetworkProtocolFrame(MyNetworkProtocolFrame.FrameType.PROTOCOL_PING,"Hello client!");
+        MyNetworkProtocolFrame answerFrame = new MyNetworkProtocolFrame(FrameType.PROTOCOL_PING,"Hello client!");
         try {
             outputStream.write(answerFrame.getAsBytes());
         } catch (IOException e) {
@@ -67,7 +71,7 @@ public class ServerMainModel
     }
 
     private void reactToSegmentArrivedRequest(MyNetworkProtocolFrame frame){
-        if(SAVE_TO_FILE){saveSegmentToFile(frame,true);}
+        if(SAVE_TO_FILE){saveSegmentToFile(frame);}
         Picture picture=Picture.create(frame.getName(), frame.getData());
         if(!isStreaming){
             controller.startStreaming(picture);
@@ -76,11 +80,44 @@ public class ServerMainModel
         controller.segmentArrived(picture);
     }
 
+    private String currentFileTransfer=null;
+    private FileOutputStream fileOutputStream=null;
     private void reactToIncomingFileTransfer(MyNetworkProtocolFrame frame){
-        saveSegmentToFile(frame,false);
+        if(currentFileTransfer==null){//nothing is in progress
+            currentFileTransfer = frame.getName();
+            File directory = obtainFileTransferDirectory();
+            Optional<FileOutputStream> tmp= createFile(frame.getName(),directory);
+            tmp.ifPresent(outputStream -> {
+                fileOutputStream = outputStream;
+                try {
+                    fileOutputStream.write(frame.getData());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }else if(currentFileTransfer.equals(frame.getName())){//this frame is a part of an ongoing transfer
+            if(frame.getDataLength()==0){//end signal
+                currentFileTransfer=null;
+                try {
+                    fileOutputStream.close();
+                    fileOutputStream=null;
+                    System.out.println("File arrived: " + frame.getName());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else{//append to file
+                try {
+                    fileOutputStream.write(frame.getData());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }else{//other file transfer is in progress
+            throw new InvalidParameterException("Another file transfer is in progress. ("+ currentFileTransfer +")");
+        }
     }
 
-    private void saveSegmentToFile(MyNetworkProtocolFrame frame,boolean isSegment){
+    private File obtainFileTransferDirectory(){
         //Main pictures folder
         String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "saves";
         directoryPath = directoryPath.substring(6);
@@ -90,20 +127,11 @@ public class ServerMainModel
                 System.err.println("Saves directory created at: "+directoryPath);
             }
         }
+        return directory;
+    }
 
-        //current timestamped folder
-        if(isSegment){
-            String timestamp= frame.getName().split("__part")[0];
-            directoryPath = directoryPath + "/" + timestamp;
-            directory = new File(directoryPath);
-            if (! isStreaming){
-                if(directory.mkdir()){
-                    System.err.println("New directory created at: "+directoryPath);
-                }
-            }
-        }
-
-        File outputFile = new File(directoryPath+"\\"+frame.getName());
+    private void createAndSaveFile(MyNetworkProtocolFrame frame,File directory){
+        File outputFile = new File(directory.getAbsolutePath()+"\\"+frame.getName());
 
         try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
             outputStream.write(frame.getData());
@@ -113,6 +141,35 @@ public class ServerMainModel
             e.printStackTrace();
             System.err.println("Unable to save the file");
         }
+    }
+
+    private Optional<FileOutputStream> createFile(String name , File directory){
+        File outputFile = new File(directory.getAbsolutePath()+"\\"+name);
+        FileOutputStream outputStream=null;
+        try {
+            outputStream = new FileOutputStream(outputFile);
+            System.out.println("FileOutputStream created: " + outputFile.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Unable to create the file");
+        }
+        return Optional.ofNullable(outputStream);
+    }
+
+    private void saveSegmentToFile(MyNetworkProtocolFrame frame){
+        File directory = obtainFileTransferDirectory();
+
+        //current timestamped folder
+        String timestamp= frame.getName().split("__part")[0];
+        String directoryPath = directory.getAbsolutePath()  + "/" + timestamp;
+        directory = new File(directoryPath);
+        if (! isStreaming){
+            if(directory.mkdir()){
+                System.err.println("New directory created at: "+directoryPath);
+            }
+        }
+
+        createAndSaveFile(frame,directory);
     }
 
     public void connectionFailed(Throwable exc){
