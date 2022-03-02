@@ -5,6 +5,11 @@ import hu.elte.sbzbxr.model.QrGenerator;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDropEvent;
+import java.io.File;
 
 public class WelcomeScreen extends JFrame {
     private Controller controller;
@@ -46,9 +51,24 @@ public class WelcomeScreen extends JFrame {
         setTitle("PhoneConnect");
         setPreferredSize(new Dimension(300,300));
         pack();
+        setupDragAndDropSupport();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
+    }
 
+    private void setupDragAndDropSupport(){
+        //Based on: https://stackoverflow.com/questions/811248/how-can-i-use-drag-and-drop-in-swing-to-get-file-path
+        this.setDropTarget(new DropTarget() {
+            public synchronized void drop(DropTargetDropEvent evt) {
+                try {
+                    evt.acceptDrop(DnDConstants.ACTION_COPY);
+                    java.util.List<File> droppedFiles = (java.util.List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                    controller.sendFilesToPhone(droppedFiles);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
     }
 
     private void setupQrCode(String str){

@@ -8,6 +8,7 @@ import hu.elte.sbzbxr.view.WelcomeScreen;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
 
 import java.awt.*;
+import java.io.File;
 import java.net.SocketAddress;
 import java.util.Objects;
 
@@ -98,5 +99,11 @@ public class Controller {
         tray.add(trayIcon);
 
         trayIcon.displayMessage(notification.getTitle(), notification.getText(), TrayIcon.MessageType.INFO);
+    }
+
+    public void sendFilesToPhone(java.util.List<File> files){
+        for (File file : files) {
+            model.sendFile(file);
+        }
     }
 }

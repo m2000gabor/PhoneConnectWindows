@@ -3,9 +3,11 @@ package hu.elte.sbzbxr.model.connection;
 import hu.elte.sbzbxr.model.ServerMainModel;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.*;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 
 public class ConnectionManager {
     private static final int SERVER_PORT = 5000;
@@ -37,6 +39,30 @@ public class ConnectionManager {
 
 
     private InetAddress getPublicIpAddress(){
+/*
+        try {
+            InetAddress a =InetAddress.getLocalHost();
+            return a;
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            String localHost = InetAddress.getLocalHost().getHostAddress();
+            System.out.println("LocalHost"+localHost);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+*/
+        try(final DatagramSocket socket = new DatagramSocket()){
+            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+            String ip = socket.getLocalAddress().getHostAddress();
+            System.out.println("ip: " + ip);
+            return InetAddress.getByName(ip);//todo might remove this
+        } catch (SocketException | UnknownHostException e) {
+            e.printStackTrace();
+        }
+
         Enumeration<NetworkInterface> nets = null;
         try {
             nets = NetworkInterface.getNetworkInterfaces();
@@ -44,8 +70,15 @@ public class ConnectionManager {
             e.printStackTrace();
         }
         if (nets == null) throw new AssertionError();
-        for (NetworkInterface netint : Collections.list(nets))
+        for (NetworkInterface netint : Collections.list(nets)){
+            for (Iterator<InetAddress> it = netint.getInetAddresses().asIterator(); it.hasNext(); ) {
+                InetAddress address = it.next();
+                System.out.println(netint.getName() + " "+address);
+            }
+
             if(netint.getName().equals("wlan2")){return Collections.list(netint.getInetAddresses()).get(0);}
+        }
+
 
         return null;
     }
@@ -63,9 +96,19 @@ public class ConnectionManager {
             if(client!=null){client.close();}
             System.out.println("Waiting for connection");
             client = serverSocket.accept();
-            serverMainModel.connectionEstablished(client.getInputStream(), client.getOutputStream());
+            serverMainModel.connectionEstablished(client.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public SafeOutputStream getOutputStream(){
+        try {
+            if(client == null) return null;
+            return new SafeOutputStream(client.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
