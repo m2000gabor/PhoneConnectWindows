@@ -5,7 +5,6 @@ import hu.elte.sbzbxr.model.SendableNotification;
 import hu.elte.sbzbxr.model.ServerMainModel;
 import hu.elte.sbzbxr.view.MainScreenJPG;
 import hu.elte.sbzbxr.view.WelcomeScreen;
-import uk.co.caprica.vlcj.player.base.MediaPlayer;
 
 import java.awt.*;
 import java.io.File;
@@ -13,13 +12,14 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 public class Controller {
+    private ControllerState state;
     private final ServerMainModel model;
     private WelcomeScreen welcomeScreen;
     private MainScreenJPG mainScreen;
 
-    public Controller(ServerMainModel model, WelcomeScreen view) {
-        this.model = model;
-        this.welcomeScreen = view;
+    public Controller() {
+        state=ControllerState.WELCOME_DISCONNECTED;
+        this.model= new ServerMainModel();
     }
 
     public void start(){
@@ -32,18 +32,20 @@ public class Controller {
     }
 
     public void init() {
-        welcomeScreen.setController(this);
+        welcomeScreen = new WelcomeScreen(this);
         model.setController(this);
     }
 
     public void connectionEstablished(){
         welcomeScreen.setConnectionLabel(true);
+        state=ControllerState.WELCOME_CONNECTED;
     }
 
     private PictureProvider pictureProvider;
     public void startStreaming(Picture picture){
         mainScreen= new MainScreenJPG(model.getServerAddress());
         mainScreen.setController(this);
+        state=ControllerState.STREAM_RUNNING;
 
         pictureProvider=new PictureProvider();
         pictureProvider.pictureArrived(picture);
@@ -55,10 +57,6 @@ public class Controller {
 
     public void showPicture(Picture picture){
         mainScreen.showPicture(picture.getImg());
-        pictureProvider.askNextPicture(this);
-    }
-
-    public void videoFinished(MediaPlayer mediaPlayer) {
         pictureProvider.askNextPicture(this);
     }
 
@@ -106,5 +104,20 @@ public class Controller {
         for (File file : files) {
             model.sendFile(file);
         }
+    }
+
+    public void disconnected(){
+        switch (state){
+            case WELCOME_DISCONNECTED -> {return;}
+            case WELCOME_CONNECTED -> {welcomeScreen.setConnectionLabel(false);}
+            case STREAM_RUNNING -> {
+                welcomeScreen = new WelcomeScreen(this);
+                SocketAddress serverAddress = model.getServerAddress();
+                welcomeScreen.setIpAddress(serverAddress.toString().replace("/",""));
+                mainScreen.dispose();
+            }
+        }
+
+        state=ControllerState.WELCOME_DISCONNECTED;
     }
 }

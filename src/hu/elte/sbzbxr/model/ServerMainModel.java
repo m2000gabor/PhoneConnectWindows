@@ -48,6 +48,7 @@ public class ServerMainModel
             } catch (IOException e) {
                 e.printStackTrace();
                 stopConnection();
+                controller.disconnected();
                 connectionManager.restartServer();
             }
         }

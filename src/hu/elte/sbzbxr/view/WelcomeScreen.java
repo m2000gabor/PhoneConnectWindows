@@ -12,7 +12,7 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
 
 public class WelcomeScreen extends JFrame {
-    private Controller controller;
+    private final Controller controller;
     ImageCanvas canvas;
     JPanel northPanel;
     JPanel centerPanel;
@@ -20,7 +20,8 @@ public class WelcomeScreen extends JFrame {
     JLabel connectionLabel;
     JLabel messageLabel;
 
-    public WelcomeScreen(){
+    public WelcomeScreen(Controller controller){
+        this.controller=controller;
         setFancyLookAndFeel();
 
         //window
@@ -82,10 +83,6 @@ public class WelcomeScreen extends JFrame {
         } catch (Exception e) {
             System.err.println("No look and feel");
         }
-    }
-
-    public void setController(Controller controller) {
-        this.controller = controller;
     }
 
     public void setIpAddress(String ipAddress){
