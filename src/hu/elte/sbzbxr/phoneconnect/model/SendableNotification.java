@@ -4,6 +4,7 @@ package hu.elte.sbzbxr.phoneconnect.model;
  * @implNote should be the same for both Windows and Android part
  * @version 1.2
  */
+@Deprecated
 public class SendableNotification {
     private final String title;
     private final String text;
