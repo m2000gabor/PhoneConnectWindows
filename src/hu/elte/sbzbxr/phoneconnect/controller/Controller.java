@@ -1,7 +1,6 @@
 package hu.elte.sbzbxr.phoneconnect.controller;
 
 import hu.elte.sbzbxr.phoneconnect.model.Picture;
-import hu.elte.sbzbxr.phoneconnect.model.SendableNotification;
 import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
 import hu.elte.sbzbxr.phoneconnect.model.connection.items.NotificationFrame;
 import hu.elte.sbzbxr.phoneconnect.view.MainScreenJPG;
@@ -110,7 +109,7 @@ public class Controller {
     public void disconnected(){
         switch (state){
             case WELCOME_DISCONNECTED -> {return;}
-            case WELCOME_CONNECTED -> {welcomeScreen.setConnectionLabel(false);}
+            case WELCOME_CONNECTED -> welcomeScreen.setConnectionLabel(false);
             case STREAM_RUNNING -> {
                 welcomeScreen = new WelcomeScreen(this);
                 SocketAddress serverAddress = model.getServerAddress();
