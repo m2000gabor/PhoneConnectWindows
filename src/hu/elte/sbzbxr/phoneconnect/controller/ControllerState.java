@@ -1,4 +1,4 @@
-package hu.elte.sbzbxr.controller;
+package hu.elte.sbzbxr.phoneconnect.controller;
 
 enum ControllerState {
     WELCOME_DISCONNECTED,

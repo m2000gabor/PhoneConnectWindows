@@ -1,9 +1,8 @@
-package hu.elte.sbzbxr.model.connection;
+package hu.elte.sbzbxr.phoneconnect.model.connection;
 
-import hu.elte.sbzbxr.model.ServerMainModel;
+import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.*;
 import java.util.Collections;
 import java.util.Enumeration;

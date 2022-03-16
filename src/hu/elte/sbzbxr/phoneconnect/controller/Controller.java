@@ -1,10 +1,10 @@
-package hu.elte.sbzbxr.controller;
+package hu.elte.sbzbxr.phoneconnect.controller;
 
-import hu.elte.sbzbxr.model.Picture;
-import hu.elte.sbzbxr.model.SendableNotification;
-import hu.elte.sbzbxr.model.ServerMainModel;
-import hu.elte.sbzbxr.view.MainScreenJPG;
-import hu.elte.sbzbxr.view.WelcomeScreen;
+import hu.elte.sbzbxr.phoneconnect.model.Picture;
+import hu.elte.sbzbxr.phoneconnect.model.SendableNotification;
+import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
+import hu.elte.sbzbxr.phoneconnect.view.MainScreenJPG;
+import hu.elte.sbzbxr.phoneconnect.view.WelcomeScreen;
 
 import java.awt.*;
 import java.io.File;

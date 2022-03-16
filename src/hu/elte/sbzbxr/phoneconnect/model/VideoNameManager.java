@@ -1,6 +1,4 @@
-package hu.elte.sbzbxr.model;
-
-import java.util.Iterator;
+package hu.elte.sbzbxr.phoneconnect.model;
 
 public class VideoNameManager{
     private final String folderPath;

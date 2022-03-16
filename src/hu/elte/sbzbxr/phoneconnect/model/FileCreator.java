@@ -1,6 +1,6 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.phoneconnect.model;
 
-import hu.elte.sbzbxr.model.connection.protocol.MyNetworkProtocolFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.MyNetworkProtocolFrame;
 
 import java.io.File;
 import java.io.FileOutputStream;

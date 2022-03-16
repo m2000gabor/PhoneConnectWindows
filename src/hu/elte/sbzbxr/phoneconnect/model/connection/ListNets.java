@@ -1,6 +1,5 @@
-package hu.elte.sbzbxr.model.connection;
+package hu.elte.sbzbxr.phoneconnect.model.connection;
 
-import java.io.*;
 import java.net.*;
 import java.util.*;
 import static java.lang.System.out;

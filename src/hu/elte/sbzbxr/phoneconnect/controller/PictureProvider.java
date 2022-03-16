@@ -1,6 +1,6 @@
-package hu.elte.sbzbxr.controller;
+package hu.elte.sbzbxr.phoneconnect.controller;
 
-import hu.elte.sbzbxr.model.Picture;
+import hu.elte.sbzbxr.phoneconnect.model.Picture;
 
 import java.util.concurrent.ArrayBlockingQueue;
 

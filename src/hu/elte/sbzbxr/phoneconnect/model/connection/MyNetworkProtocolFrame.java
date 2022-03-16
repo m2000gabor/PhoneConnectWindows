@@ -1,4 +1,6 @@
-package hu.elte.sbzbxr.model.connection.protocol;
+package hu.elte.sbzbxr.phoneconnect.model.connection;
+
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.FrameType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,9 +10,11 @@ import java.util.Arrays;
 import java.util.Optional;
 
 /**
+ * @deprecated Use @NetworkFrame instead
  * @apiNote Must be the same for both Android and Windows side
- * @version 4.6
+ * @version 5.0
  */
+@Deprecated
 public class MyNetworkProtocolFrame {
 
     private final FrameType type;
@@ -29,6 +33,7 @@ public class MyNetworkProtocolFrame {
         this.name= name;
         this.dataLength = data.length;
         this.data = data;
+
     }
 
     public byte[] getAsBytes(){

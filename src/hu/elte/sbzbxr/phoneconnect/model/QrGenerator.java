@@ -1,4 +1,4 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.phoneconnect.model;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;

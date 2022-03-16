@@ -1,4 +1,4 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.phoneconnect.model;
 
 /**
  * @implNote should be the same for both Windows and Android part

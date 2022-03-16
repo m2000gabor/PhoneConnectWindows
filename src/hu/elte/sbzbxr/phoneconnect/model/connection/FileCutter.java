@@ -1,7 +1,6 @@
-package hu.elte.sbzbxr.model.connection;
+package hu.elte.sbzbxr.phoneconnect.model.connection;
 
-import hu.elte.sbzbxr.model.connection.protocol.FrameType;
-import hu.elte.sbzbxr.model.connection.protocol.MyNetworkProtocolFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.FrameType;
 
 import java.io.*;
 
@@ -49,7 +48,7 @@ public class FileCutter {
                     read = inputStream.read();
                 }
                 if(read>=0){byteArrayOutputStream.write(read);}
-                current = new MyNetworkProtocolFrame(FrameType.PROTOCOL_FILE,path,byteArrayOutputStream.toByteArray());
+                current = new MyNetworkProtocolFrame(FrameType.FILE,path,byteArrayOutputStream.toByteArray());
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -62,7 +61,7 @@ public class FileCutter {
     }
 
     private MyNetworkProtocolFrame getEndOfFileFrame(){
-        return new MyNetworkProtocolFrame(FrameType.PROTOCOL_FILE,path,new byte[0]);
+        return new MyNetworkProtocolFrame(FrameType.FILE,path,new byte[0]);
     }
 }
 

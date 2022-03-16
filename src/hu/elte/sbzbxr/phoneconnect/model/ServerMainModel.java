@@ -1,14 +1,15 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.phoneconnect.model;
 
-import hu.elte.sbzbxr.controller.Controller;
-import hu.elte.sbzbxr.model.connection.ConnectionManager;
-import hu.elte.sbzbxr.model.connection.FileCutter;
-import hu.elte.sbzbxr.model.connection.SafeOutputStream;
-import hu.elte.sbzbxr.model.connection.protocol.FrameType;
-import hu.elte.sbzbxr.model.connection.protocol.MyNetworkProtocolFrame;
+import hu.elte.sbzbxr.phoneconnect.controller.Controller;
+import hu.elte.sbzbxr.phoneconnect.model.connection.ConnectionManager;
+import hu.elte.sbzbxr.phoneconnect.model.connection.FileCutter;
+import hu.elte.sbzbxr.phoneconnect.model.connection.MyNetworkProtocolFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.SafeOutputStream;
 
 import java.io.*;
 import java.net.SocketAddress;
+
+import static hu.elte.sbzbxr.phoneconnect.model.connection.items.FrameType.PING;
 
 public class ServerMainModel
 {
@@ -39,10 +40,10 @@ public class ServerMainModel
             try {
                 MyNetworkProtocolFrame frame = MyNetworkProtocolFrame.inputStreamToFrame(i);
                 switch (frame.getType()) {
-                    case PROTOCOL_PING -> reactToPingRequest(frame);
-                    case PROTOCOL_SEGMENT -> reactToSegmentArrivedRequest(frame);
-                    case PROTOCOL_NOTIFICATION -> reactToNotificationArrived(frame);
-                    case PROTOCOL_FILE -> fileCreator.reactToIncomingFileTransfer(frame);
+                    case PING -> reactToPingRequest(frame);
+                    case SEGMENT -> reactToSegmentArrivedRequest(frame);
+                    case NOTIFICATION -> reactToNotificationArrived(frame);
+                    case FILE -> fileCreator.reactToIncomingFileTransfer(frame);
                     default -> throw new RuntimeException("Unhandled type");
                 }
             } catch (IOException e) {
@@ -57,7 +58,7 @@ public class ServerMainModel
     private void reactToPingRequest(MyNetworkProtocolFrame frame){
         String receivedMsg = new String(frame.getData());
         System.out.println("Received ping message: "+receivedMsg);
-        MyNetworkProtocolFrame answerFrame = new MyNetworkProtocolFrame(FrameType.PROTOCOL_PING,"Hello client!");
+        MyNetworkProtocolFrame answerFrame = new MyNetworkProtocolFrame(PING,"Hello client!");
         try {
             connectionManager.getOutputStream().write(answerFrame.getAsBytes());
         } catch (IOException e) {
