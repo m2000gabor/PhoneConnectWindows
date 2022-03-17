@@ -5,9 +5,9 @@ import hu.elte.sbzbxr.phoneconnect.model.connection.ConnectionManager;
 import hu.elte.sbzbxr.phoneconnect.model.connection.FileCutter;
 import hu.elte.sbzbxr.phoneconnect.model.connection.SafeOutputStream;
 import hu.elte.sbzbxr.phoneconnect.model.connection.items.*;
+import hu.elte.sbzbxr.phoneconnect.model.persistence.FileCreator;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
@@ -15,7 +15,7 @@ import java.net.SocketAddress;
 public class ServerMainModel
 {
     private static final boolean SAVE_TO_FILE = false;
-    private final FileCreator fileCreator = new FileCreator(this);
+    private final FileCreator fileCreator = new FileCreator();
     private Controller controller;
     private ConnectionManager connectionManager;
     boolean isRunning=false;
@@ -41,7 +41,7 @@ public class ServerMainModel
             try {
                 FrameType type = NetworkFrameCreator.getType(i);
                 switch (type) {
-                    case PING -> reactToPingRequest(PingFrame.deserialize(i));
+                    case INTERNAL_MESSAGE -> reactToInternalMessage(MessageFrame.deserialize(i));
                     case SEGMENT -> reactToSegmentArrivedRequest(FileFrame.deserialize(type,i));
                     case NOTIFICATION -> reactToNotificationArrived(NotificationFrame.deserialize(i));
                     case FILE -> reactToIncomingFileTransfer(FileFrame.deserialize(type,i));
@@ -57,10 +57,24 @@ public class ServerMainModel
         }
     }
 
-    private void reactToPingRequest(PingFrame pingFrame){
-        String receivedMsg = pingFrame.name;
+    private void reactToInternalMessage(MessageFrame messageFrame){
+        MessageType type = MessageType.valueOf(messageFrame.name);
+        String receivedMsg = messageFrame.message;
+        switch (type){
+            default -> throw new IllegalArgumentException("Unknown type of internal message");
+            case PING -> pingMessageArrived(receivedMsg);
+            case RESTORE -> restoreMessageArrived(receivedMsg);
+        }
+
+    }
+
+    private void restoreMessageArrived(String msg){
+
+    }
+
+    private void pingMessageArrived(String receivedMsg){
         System.out.println("Received ping message: "+receivedMsg);
-        PingFrame answerFrame = new PingFrame("Hello client!");
+        MessageFrame answerFrame = new MessageFrame(MessageType.PING,"Hello client!");
         try {
             connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());
         } catch (IOException e) {
@@ -84,53 +98,12 @@ public class ServerMainModel
     }
 
     private void reactToIncomingFileTransfer(FileFrame frame){
-        fileCreator.reactToIncomingFileTransfer(frame);
-    }
-
-    File obtainFileTransferDirectory(){
-        //Main pictures folder
-        String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "saves";
-        directoryPath = directoryPath.substring(6);
-        File directory = new File(directoryPath);
-        if (! directory.exists()){
-            if(directory.mkdir()){
-                System.err.println("Saves directory created at: "+directoryPath);
-            }
-        }
-        return directory;
-    }
-
-    private void createAndSaveFile(FileFrame frame,File directory){
-        File outputFile = new File(directory.getAbsolutePath()+"\\"+frame.name);
-
-        try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
-            outputStream.write(frame.getData());
-            System.out.println("File saved to " + outputFile.getAbsolutePath());
-            System.out.println(frame.getDataLength()+" bytes saved");
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("Unable to save the file");
-        }
+        fileCreator.saveFileFrame(frame);
     }
 
     private void saveSegmentToFile(FileFrame frame){
-        File directory = obtainFileTransferDirectory();
-
-        //current timestamped folder
-        String timestamp= frame.name.split("__part")[0];
-        String directoryPath = directory.getAbsolutePath()  + "/" + timestamp;
-        directory = new File(directoryPath);
-        if (! isStreaming){
-            if(directory.mkdir()){
-                System.err.println("New directory created at: "+directoryPath);
-            }
-        }
-
-        createAndSaveFile(frame,directory);
-    }
-
-    public void connectionFailed(Throwable exc){
-        System.err.println(exc.getMessage());
+        String timestamp = frame.name.split("__part")[0];
+        fileCreator.saveSegment(frame,timestamp);
     }
 
     public void stopConnection(){
