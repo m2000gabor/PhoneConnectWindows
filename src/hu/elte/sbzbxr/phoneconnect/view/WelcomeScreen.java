@@ -1,7 +1,7 @@
-package hu.elte.sbzbxr.view;
+package hu.elte.sbzbxr.phoneconnect.view;
 
-import hu.elte.sbzbxr.controller.Controller;
-import hu.elte.sbzbxr.model.QrGenerator;
+import hu.elte.sbzbxr.phoneconnect.controller.Controller;
+import hu.elte.sbzbxr.phoneconnect.model.QrGenerator;
 
 import javax.swing.*;
 import java.awt.*;

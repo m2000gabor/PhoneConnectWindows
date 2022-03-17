@@ -1,6 +1,6 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.phoneconnect.model;
 
-import hu.elte.sbzbxr.model.connection.protocol.MyNetworkProtocolFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.FileFrame;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,12 +17,12 @@ public class FileCreator {
         this.serverMainModel = serverMainModel;
     }
 
-    public void reactToIncomingFileTransfer(MyNetworkProtocolFrame frame) {
+    public void reactToIncomingFileTransfer(FileFrame frame) {
         try {
             if (currentFileTransfer == null) {//nothing is in progress
-                currentFileTransfer = frame.getName();
+                currentFileTransfer = frame.name;
                 File directory = serverMainModel.obtainFileTransferDirectory();
-                Optional<FileOutputStream> tmp = createFile(frame.getName(), directory);
+                Optional<FileOutputStream> tmp = createFile(frame.name, directory);
                 tmp.ifPresent(outputStream -> {
                     fileOutputStream = outputStream;
                     try {
@@ -31,12 +31,12 @@ public class FileCreator {
                         e.printStackTrace();
                     }
                 });
-            } else if (currentFileTransfer.equals(frame.getName())) {//this frame is a part of an ongoing transfer
+            } else if (currentFileTransfer.equals(frame.name)) {//this frame is a part of an ongoing transfer
                 if (frame.getDataLength() == 0) {//end signal
                     currentFileTransfer = null;
                     fileOutputStream.close();
                     fileOutputStream = null;
-                    System.out.println("File arrived: " + frame.getName());
+                    System.out.println("File arrived: " + frame.name);
                 } else {//append to file
                     fileOutputStream.write(frame.getData());
                 }
@@ -60,5 +60,13 @@ public class FileCreator {
             System.err.println("Unable to create the file");
         }
         return Optional.ofNullable(outputStream);
+    }
+
+    public void connectionStopped() {
+        try {
+            if(fileOutputStream!=null) fileOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

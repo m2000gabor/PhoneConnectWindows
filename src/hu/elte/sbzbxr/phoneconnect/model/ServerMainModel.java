@@ -1,13 +1,15 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.phoneconnect.model;
 
-import hu.elte.sbzbxr.controller.Controller;
-import hu.elte.sbzbxr.model.connection.ConnectionManager;
-import hu.elte.sbzbxr.model.connection.FileCutter;
-import hu.elte.sbzbxr.model.connection.SafeOutputStream;
-import hu.elte.sbzbxr.model.connection.protocol.FrameType;
-import hu.elte.sbzbxr.model.connection.protocol.MyNetworkProtocolFrame;
+import hu.elte.sbzbxr.phoneconnect.controller.Controller;
+import hu.elte.sbzbxr.phoneconnect.model.connection.ConnectionManager;
+import hu.elte.sbzbxr.phoneconnect.model.connection.FileCutter;
+import hu.elte.sbzbxr.phoneconnect.model.connection.SafeOutputStream;
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.*;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketAddress;
 
 public class ServerMainModel
@@ -37,12 +39,12 @@ public class ServerMainModel
         System.out.println("Connection established");
         while (isRunning) {
             try {
-                MyNetworkProtocolFrame frame = MyNetworkProtocolFrame.inputStreamToFrame(i);
-                switch (frame.getType()) {
-                    case PROTOCOL_PING -> reactToPingRequest(frame);
-                    case PROTOCOL_SEGMENT -> reactToSegmentArrivedRequest(frame);
-                    case PROTOCOL_NOTIFICATION -> reactToNotificationArrived(frame);
-                    case PROTOCOL_FILE -> fileCreator.reactToIncomingFileTransfer(frame);
+                FrameType type = NetworkFrameCreator.getType(i);
+                switch (type) {
+                    case PING -> reactToPingRequest(PingFrame.deserialize(i));
+                    case SEGMENT -> reactToSegmentArrivedRequest(FileFrame.deserialize(type,i));
+                    case NOTIFICATION -> reactToNotificationArrived(NotificationFrame.deserialize(i));
+                    case FILE -> reactToIncomingFileTransfer(FileFrame.deserialize(type,i));
                     default -> throw new RuntimeException("Unhandled type");
                 }
             } catch (IOException e) {
@@ -50,30 +52,30 @@ public class ServerMainModel
                 stopConnection();
                 controller.disconnected();
                 connectionManager.restartServer();
+                break;
             }
         }
     }
 
-    private void reactToPingRequest(MyNetworkProtocolFrame frame){
-        String receivedMsg = new String(frame.getData());
+    private void reactToPingRequest(PingFrame pingFrame){
+        String receivedMsg = pingFrame.name;
         System.out.println("Received ping message: "+receivedMsg);
-        MyNetworkProtocolFrame answerFrame = new MyNetworkProtocolFrame(FrameType.PROTOCOL_PING,"Hello client!");
+        PingFrame answerFrame = new PingFrame("Hello client!");
         try {
-            connectionManager.getOutputStream().write(answerFrame.getAsBytes());
+            connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Unable to send the answer to the ping request");
         }
     }
 
-    private void reactToNotificationArrived(MyNetworkProtocolFrame frame){
-        SendableNotification notification = new SendableNotification(frame.getData());
-        controller.showNotification(notification);
+    private void reactToNotificationArrived(NotificationFrame notificationFrame){
+        controller.showNotification(notificationFrame);
     }
 
-    private void reactToSegmentArrivedRequest(MyNetworkProtocolFrame frame){
-        if(SAVE_TO_FILE){saveSegmentToFile(frame);}
-        Picture picture=Picture.create(frame.getName(), frame.getData());
+    private void reactToSegmentArrivedRequest(FileFrame segment) {
+        if(SAVE_TO_FILE){saveSegmentToFile(segment);}
+        Picture picture=Picture.create(segment.name, segment.getData());
         if(!isStreaming){
             controller.startStreaming(picture);
             isStreaming=true;// If this is the first segment, start the streaming
@@ -81,8 +83,7 @@ public class ServerMainModel
         controller.segmentArrived(picture);
     }
 
-    private void reactToIncomingFileTransfer(MyNetworkProtocolFrame frame){
-
+    private void reactToIncomingFileTransfer(FileFrame frame){
         fileCreator.reactToIncomingFileTransfer(frame);
     }
 
@@ -99,8 +100,8 @@ public class ServerMainModel
         return directory;
     }
 
-    private void createAndSaveFile(MyNetworkProtocolFrame frame,File directory){
-        File outputFile = new File(directory.getAbsolutePath()+"\\"+frame.getName());
+    private void createAndSaveFile(FileFrame frame,File directory){
+        File outputFile = new File(directory.getAbsolutePath()+"\\"+frame.name);
 
         try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
             outputStream.write(frame.getData());
@@ -112,11 +113,11 @@ public class ServerMainModel
         }
     }
 
-    private void saveSegmentToFile(MyNetworkProtocolFrame frame){
+    private void saveSegmentToFile(FileFrame frame){
         File directory = obtainFileTransferDirectory();
 
         //current timestamped folder
-        String timestamp= frame.getName().split("__part")[0];
+        String timestamp= frame.name.split("__part")[0];
         String directoryPath = directory.getAbsolutePath()  + "/" + timestamp;
         directory = new File(directoryPath);
         if (! isStreaming){
@@ -132,9 +133,10 @@ public class ServerMainModel
         System.err.println(exc.getMessage());
     }
 
-    public void stopConnection(){//todo show it in the ui?
+    public void stopConnection(){
         isRunning=false;
         isStreaming=false;
+        fileCreator.connectionStopped();
     }
 
     public void setController(Controller controller) {
@@ -157,7 +159,7 @@ public class ServerMainModel
 
         while(!fileCutter.isEnd()){
             try {
-                outputStream.write(fileCutter.current().getAsBytes());
+                outputStream.write(fileCutter.current().serialize().getAsBytes());
                 System.out.println("sent a piece of file");
                 fileCutter.next();
             } catch (IOException e) {

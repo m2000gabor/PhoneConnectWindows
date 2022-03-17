@@ -1,18 +1,18 @@
-package hu.elte.sbzbxr.model.connection;
+package hu.elte.sbzbxr.phoneconnect.model.connection;
 
-import hu.elte.sbzbxr.model.connection.protocol.FrameType;
-import hu.elte.sbzbxr.model.connection.protocol.MyNetworkProtocolFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.FileFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.FrameType;
 
 import java.io.*;
 
-//version: 1.1
+//version: 1.2
 public class FileCutter {
     private static final int FILE_FRAME_MAX_SIZE=32000;//in bytes
     private final InputStream inputStream;
     private final String path;
     private boolean isClosingPart=false;
     private boolean isEnd=false;
-    private MyNetworkProtocolFrame current;
+    private FileFrame current;
 
     public FileCutter(File file){
         InputStream inputStream1;
@@ -27,7 +27,7 @@ public class FileCutter {
         next();
     }
 
-    public MyNetworkProtocolFrame current(){return current;}
+    public FileFrame current(){return current;}
 
     public void next(){
         if(isEnd) return;
@@ -49,7 +49,7 @@ public class FileCutter {
                     read = inputStream.read();
                 }
                 if(read>=0){byteArrayOutputStream.write(read);}
-                current = new MyNetworkProtocolFrame(FrameType.PROTOCOL_FILE,path,byteArrayOutputStream.toByteArray());
+                current = new FileFrame(FrameType.FILE,path,byteArrayOutputStream.toByteArray());
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -61,8 +61,8 @@ public class FileCutter {
         return isEnd;
     }
 
-    private MyNetworkProtocolFrame getEndOfFileFrame(){
-        return new MyNetworkProtocolFrame(FrameType.PROTOCOL_FILE,path,new byte[0]);
+    private FileFrame getEndOfFileFrame(){
+        return new FileFrame(FrameType.FILE,path,new byte[0]);
     }
 }
 

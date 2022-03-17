@@ -1,9 +1,7 @@
-package hu.elte.sbzbxr.controller;
+package hu.elte.sbzbxr.phoneconnect.controller;
 
-import hu.elte.sbzbxr.model.VideoNameManager;
-import uk.co.caprica.vlcj.player.base.MediaPlayer;
+import hu.elte.sbzbxr.phoneconnect.model.VideoNameManager;
 
-import java.io.File;
 import java.util.concurrent.ArrayBlockingQueue;
 
 @Deprecated

@@ -1,10 +1,10 @@
-package hu.elte.sbzbxr.controller;
+package hu.elte.sbzbxr.phoneconnect.controller;
 
-import hu.elte.sbzbxr.model.Picture;
-import hu.elte.sbzbxr.model.SendableNotification;
-import hu.elte.sbzbxr.model.ServerMainModel;
-import hu.elte.sbzbxr.view.MainScreenJPG;
-import hu.elte.sbzbxr.view.WelcomeScreen;
+import hu.elte.sbzbxr.phoneconnect.model.Picture;
+import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.NotificationFrame;
+import hu.elte.sbzbxr.phoneconnect.view.MainScreenJPG;
+import hu.elte.sbzbxr.phoneconnect.view.WelcomeScreen;
 
 import java.awt.*;
 import java.io.File;
@@ -64,7 +64,7 @@ public class Controller {
         pictureProvider.pictureArrived(picture);
     }
 
-    public void showNotification(SendableNotification notification) {
+    public void showNotification(NotificationFrame notification) {
         System.out.println(notification);
 
         //From: https://stackoverflow.com/questions/34490218/how-to-make-a-windows-notification-in-java
@@ -81,7 +81,7 @@ public class Controller {
     }
 
     private TrayIcon trayIcon = null;
-    public void displayTray(SendableNotification notification) throws AWTException {
+    public void displayTray(NotificationFrame notification) throws AWTException {
         if(trayIcon == null){
             //Obtain only one instance of the SystemTray object
             SystemTray tray = SystemTray.getSystemTray();
@@ -97,7 +97,7 @@ public class Controller {
             tray.add(trayIcon);
         }
 
-        trayIcon.displayMessage(notification.getTitle(), notification.getText(), TrayIcon.MessageType.INFO);
+        trayIcon.displayMessage(notification.title, notification.text, TrayIcon.MessageType.INFO);
     }
 
     public void sendFilesToPhone(java.util.List<File> files){
@@ -109,7 +109,7 @@ public class Controller {
     public void disconnected(){
         switch (state){
             case WELCOME_DISCONNECTED -> {return;}
-            case WELCOME_CONNECTED -> {welcomeScreen.setConnectionLabel(false);}
+            case WELCOME_CONNECTED -> welcomeScreen.setConnectionLabel(false);
             case STREAM_RUNNING -> {
                 welcomeScreen = new WelcomeScreen(this);
                 SocketAddress serverAddress = model.getServerAddress();

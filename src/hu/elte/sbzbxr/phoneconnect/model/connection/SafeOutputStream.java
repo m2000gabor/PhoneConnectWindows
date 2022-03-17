@@ -1,4 +1,4 @@
-package hu.elte.sbzbxr.model.connection;
+package hu.elte.sbzbxr.phoneconnect.model.connection;
 
 import java.io.IOException;
 import java.io.OutputStream;

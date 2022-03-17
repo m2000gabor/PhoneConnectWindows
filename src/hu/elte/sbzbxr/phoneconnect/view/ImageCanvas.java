@@ -1,4 +1,4 @@
-package hu.elte.sbzbxr.view;
+package hu.elte.sbzbxr.phoneconnect.view;
 
 import java.awt.*;
 import java.awt.event.ComponentAdapter;

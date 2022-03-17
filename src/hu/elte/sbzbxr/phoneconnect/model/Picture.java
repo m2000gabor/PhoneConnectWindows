@@ -1,4 +1,4 @@
-package hu.elte.sbzbxr.model;
+package hu.elte.sbzbxr.phoneconnect.model;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

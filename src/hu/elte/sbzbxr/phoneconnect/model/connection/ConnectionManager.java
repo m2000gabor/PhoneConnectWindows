@@ -1,9 +1,8 @@
-package hu.elte.sbzbxr.model.connection;
+package hu.elte.sbzbxr.phoneconnect.model.connection;
 
-import hu.elte.sbzbxr.model.ServerMainModel;
+import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.*;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -88,18 +87,20 @@ public class ConnectionManager {
     public void startServer(ServerMainModel owner){
         serverMainModel = owner;
         // Listen for a new request
-        new Thread(this::restartServer).start();
+        restartServer();
     }
 
     public void restartServer(){
-        try {
-            if(client!=null){client.close();}
-            System.out.println("Waiting for connection");
-            client = serverSocket.accept();
-            serverMainModel.connectionEstablished(client.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new Thread(()->{
+            try {
+                if(client!=null){client.close();}
+                System.out.println("Waiting for connection");
+                    client = serverSocket.accept();
+                    serverMainModel.connectionEstablished(client.getInputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     public SafeOutputStream getOutputStream(){
