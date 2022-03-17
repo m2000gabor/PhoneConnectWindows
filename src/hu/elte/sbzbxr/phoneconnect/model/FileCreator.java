@@ -61,4 +61,12 @@ public class FileCreator {
         }
         return Optional.ofNullable(outputStream);
     }
+
+    public void connectionStopped() {
+        try {
+            if(fileOutputStream!=null) fileOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

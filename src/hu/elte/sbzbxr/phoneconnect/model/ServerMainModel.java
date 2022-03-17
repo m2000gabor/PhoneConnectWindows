@@ -44,7 +44,7 @@ public class ServerMainModel
                     case PING -> reactToPingRequest(PingFrame.deserialize(i));
                     case SEGMENT -> reactToSegmentArrivedRequest(FileFrame.deserialize(type,i));
                     case NOTIFICATION -> reactToNotificationArrived(NotificationFrame.deserialize(i));
-                    case FILE -> fileCreator.reactToIncomingFileTransfer(FileFrame.deserialize(type,i));
+                    case FILE -> reactToIncomingFileTransfer(FileFrame.deserialize(type,i));
                     default -> throw new RuntimeException("Unhandled type");
                 }
             } catch (IOException e) {
@@ -136,6 +136,7 @@ public class ServerMainModel
     public void stopConnection(){
         isRunning=false;
         isStreaming=false;
+        fileCreator.connectionStopped();
     }
 
     public void setController(Controller controller) {
