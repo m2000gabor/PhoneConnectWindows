@@ -87,18 +87,20 @@ public class ConnectionManager {
     public void startServer(ServerMainModel owner){
         serverMainModel = owner;
         // Listen for a new request
-        new Thread(this::restartServer).start();
+        restartServer();
     }
 
     public void restartServer(){
-        try {
-            if(client!=null){client.close();}
-            System.out.println("Waiting for connection");
-            client = serverSocket.accept();
-            serverMainModel.connectionEstablished(client.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new Thread(()->{
+            try {
+                if(client!=null){client.close();}
+                System.out.println("Waiting for connection");
+                    client = serverSocket.accept();
+                    serverMainModel.connectionEstablished(client.getInputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     public SafeOutputStream getOutputStream(){

@@ -6,8 +6,10 @@ import hu.elte.sbzbxr.phoneconnect.model.connection.FileCutter;
 import hu.elte.sbzbxr.phoneconnect.model.connection.SafeOutputStream;
 import hu.elte.sbzbxr.phoneconnect.model.connection.items.*;
 
-import java.awt.*;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketAddress;
 
 public class ServerMainModel
@@ -50,6 +52,7 @@ public class ServerMainModel
                 stopConnection();
                 controller.disconnected();
                 connectionManager.restartServer();
+                break;
             }
         }
     }
@@ -130,7 +133,7 @@ public class ServerMainModel
         System.err.println(exc.getMessage());
     }
 
-    public void stopConnection(){//todo show it in the ui?
+    public void stopConnection(){
         isRunning=false;
         isStreaming=false;
     }
