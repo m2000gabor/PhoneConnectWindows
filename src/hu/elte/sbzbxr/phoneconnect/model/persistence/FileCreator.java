@@ -1,28 +1,37 @@
 package hu.elte.sbzbxr.phoneconnect.model.persistence;
 
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.BackupFileFrame;
 import hu.elte.sbzbxr.phoneconnect.model.connection.items.FileFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.SegmentFrame;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.Objects;
-import java.util.Optional;
 
+/**
+ * Creates a file, write the pieces after each other
+ */
 public class FileCreator {
-    private final FileManager fileManager;
+    private final FileSystemManager fileSystemManager;
     public String onGoingFileSaving = null; //filename
     public String onGoingSegmentSaving = null; // folder name
-    public FileOutputStream fileOutputStream = null;
+    public String onGoingBackupFilename = null; //filename
+    public String onGoingBackupDirectory = null;// folder name
+    public FileOutputStream fileTransferStream = null;
+    public FileOutputStream backupStream = null;
 
     public FileCreator() {
-        this.fileManager = new FileManager();
+        this.fileSystemManager = new FileSystemManager();
     }
 
-    public void saveSegment(FileFrame frame, String directoryName){
-        if(!Objects.equals(onGoingSegmentSaving, directoryName)){onGoingSegmentSaving = fileManager.createSegmentDirectory(directoryName).getName();}
-        try (FileOutputStream outputStream = fileManager.createFile_SegmentSave(onGoingSegmentSaving, frame.name)){
+    public void saveSegment(SegmentFrame frame){
+        if(!Objects.equals(onGoingSegmentSaving, frame.folderName) || !Objects.equals(frame.folderName, onGoingSegmentSaving)){
+            onGoingSegmentSaving = fileSystemManager.createSegmentDirectory(frame.folderName).getName();
+        }
+        try (FileOutputStream outputStream = fileSystemManager.createFile_SegmentSave(onGoingSegmentSaving, frame.name)){
             outputStream.write(frame.getData());
+            System.out.println("Saved segment: " + frame.name);
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -32,16 +41,17 @@ public class FileCreator {
         try {
             if (onGoingFileSaving == null) {//nothing is in progress
                 onGoingFileSaving = frame.name;
-                fileOutputStream = fileManager.createFile_IncomingTransfer(onGoingFileSaving);
-                fileOutputStream.write(frame.getData());
+                fileTransferStream = fileSystemManager.createFile_IncomingTransfer(onGoingFileSaving);
+                System.out.println("Saving file: " + frame.name + " started");
+                fileTransferStream.write(frame.getData());
             } else if (onGoingFileSaving.equals(frame.name)) {//this frame is a part of an ongoing transfer
                 if (isLastPieceOfFile(frame)) {//end signal
                     onGoingFileSaving = null;
-                    fileOutputStream.close();
-                    fileOutputStream = null;
-                    System.out.println("File arrived: " + frame.name);
+                    fileTransferStream.close();
+                    fileTransferStream = null;
+                    System.out.println("File fully arrived: " + frame.name);
                 } else {//append to file
-                    fileOutputStream.write(frame.getData());
+                    fileTransferStream.write(frame.getData());
                 }
             } else {//other file transfer is in progress
                 throw new InvalidParameterException("Another file transfer is in progress. (" + onGoingFileSaving + ")");
@@ -49,31 +59,50 @@ public class FileCreator {
         } catch (IOException | InvalidParameterException e) {
             e.printStackTrace();
         }
+    }
 
+    public void saveBackupFrame(BackupFileFrame frame) {
+        try {
+            if(onGoingBackupDirectory == null || !Objects.equals(frame.folderName, onGoingBackupDirectory)){
+                onGoingBackupDirectory = fileSystemManager.createBackup(frame.folderName).getName();
+            }
+
+            if (onGoingBackupFilename == null) {//nothing is in progress
+                onGoingBackupFilename = frame.name;
+                backupStream = fileSystemManager.createFile_Backup(onGoingBackupDirectory,onGoingBackupFilename);
+                System.out.println("Saving file: " + frame.name + " started");
+                backupStream.write(frame.getData());
+            } else if (onGoingBackupFilename.equals(frame.name)) {//this frame is a part of an ongoing transfer
+                if (isLastPieceOfFile(frame)) {//end signal
+                    onGoingBackupFilename = null;
+                    backupStream.close();
+                    backupStream = null;
+                    System.out.println("File fully arrived: " + frame.name);
+                } else {//append to file
+                    backupStream.write(frame.getData());
+                }
+            } else {//other file transfer is in progress
+                throw new InvalidParameterException("Another file transfer is in progress. (" + onGoingBackupFilename + ")");
+            }
+        } catch (IOException | InvalidParameterException e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean isLastPieceOfFile(FileFrame frame){
         return frame.getDataLength() == 0;
     }
 
-    private Optional<FileOutputStream> createFile(String name , File directory){
-        File outputFile = new File(directory.getAbsolutePath()+"\\"+name);
-        FileOutputStream outputStream=null;
-        try {
-            outputStream = new FileOutputStream(outputFile);
-            System.out.println("FileOutputStream created: " + outputFile.getAbsolutePath());
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("Unable to create the file");
-        }
-        return Optional.ofNullable(outputStream);
-    }
-
     public void connectionStopped() {
         try {
-            if(fileOutputStream!=null) fileOutputStream.close();
+            if(fileTransferStream!=null) fileTransferStream.close();
+            if(backupStream!=null) backupStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public FileSystemManager getFileManager() {
+        return fileSystemManager;
     }
 }

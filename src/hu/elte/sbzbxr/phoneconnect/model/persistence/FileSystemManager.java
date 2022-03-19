@@ -7,13 +7,16 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class FileManager{
+/**
+ * Create the directories, open the files, list files in directory
+ */
+public class FileSystemManager {
     private File rootDir;
     private File backupDirHome;
     private File segmentDirHome;
     private File fileTransferDirHome;
 
-    public FileManager(){
+    public FileSystemManager(){
         init();
     }
 
@@ -97,5 +100,9 @@ public class FileManager{
         File[] fileArr = new File(getBackupDirectory().getPath() + File.separator + dirName ).listFiles();
         if(fileArr == null) fileArr= new File[0];
         return List.of(fileArr);
+    }
+
+    public File getRootDir() {
+        return rootDir;
     }
 }
