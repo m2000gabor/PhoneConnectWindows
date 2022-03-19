@@ -5,17 +5,20 @@ import hu.elte.sbzbxr.phoneconnect.model.connection.ConnectionManager;
 import hu.elte.sbzbxr.phoneconnect.model.connection.FileCutter;
 import hu.elte.sbzbxr.phoneconnect.model.connection.SafeOutputStream;
 import hu.elte.sbzbxr.phoneconnect.model.connection.items.*;
+import hu.elte.sbzbxr.phoneconnect.model.connection.items.message.*;
+import hu.elte.sbzbxr.phoneconnect.model.persistence.FileCreator;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServerMainModel
 {
     private static final boolean SAVE_TO_FILE = false;
-    private final FileCreator fileCreator = new FileCreator(this);
+    private final FileCreator fileCreator = new FileCreator();
     private Controller controller;
     private ConnectionManager connectionManager;
     boolean isRunning=false;
@@ -40,11 +43,13 @@ public class ServerMainModel
         while (isRunning) {
             try {
                 FrameType type = NetworkFrameCreator.getType(i);
+                //System.out.println("Frame arrived with type: " + type);
                 switch (type) {
-                    case PING -> reactToPingRequest(PingFrame.deserialize(i));
-                    case SEGMENT -> reactToSegmentArrivedRequest(FileFrame.deserialize(type,i));
+                    case INTERNAL_MESSAGE -> reactToInternalMessage(i);
+                    case SEGMENT -> reactToSegmentArrivedRequest(SegmentFrame.deserialize(type,i));
                     case NOTIFICATION -> reactToNotificationArrived(NotificationFrame.deserialize(i));
                     case FILE -> reactToIncomingFileTransfer(FileFrame.deserialize(type,i));
+                    case BACKUP_FILE -> reactToIncomingBackup(BackupFileFrame.deserialize(type,i));
                     default -> throw new RuntimeException("Unhandled type");
                 }
             } catch (IOException e) {
@@ -57,10 +62,43 @@ public class ServerMainModel
         }
     }
 
-    private void reactToPingRequest(PingFrame pingFrame){
-        String receivedMsg = pingFrame.name;
+    private void reactToInternalMessage(InputStream inputStream) throws IOException {
+        MessageFrame messageFrame = MessageFrame.deserialize(inputStream);
+        MessageType type = messageFrame.messageType;
+        switch (type){
+            default -> throw new IllegalArgumentException("Unknown type of internal message");
+            case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream).message);
+            case RESTORE_GET_AVAILABLE -> restoreGetMessageArrived();
+            case RESTORE_START_RESTORE -> restoreStartMessageArrived(StartRestoreMessageFrame.deserialize(inputStream));
+        }
+
+    }
+
+    private void restoreStartMessageArrived(StartRestoreMessageFrame messageFrame) {
+        System.out.println("Start restore message arrived! Restore dir: "+ messageFrame.backupId);
+        List<File> filesToRestore = fileCreator.getFileManager().getFilesOfBackup(messageFrame.backupId);
+        if(filesToRestore.isEmpty()){
+            System.err.println("There is no backup directory with the name: "+messageFrame.backupId);
+        }else{
+            sendFiles(filesToRestore,FrameType.RESTORE_FILE, messageFrame.backupId);
+        }
+    }
+
+    private void restoreGetMessageArrived(){
+        System.out.println("Received: get backup list message");
+        ArrayList<String> folders = fileCreator.getFileManager().getBackupFolderNames();
+        MessageFrame answerFrame = new RestorePostMessageFrame(folders);
+        try {
+            connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Unable to send the answer to the restore request");
+        }
+    }
+
+    private void pingMessageArrived(String receivedMsg){
         System.out.println("Received ping message: "+receivedMsg);
-        PingFrame answerFrame = new PingFrame("Hello client!");
+        MessageFrame answerFrame = new PingMessageFrame("Hello client!");
         try {
             connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());
         } catch (IOException e) {
@@ -73,7 +111,7 @@ public class ServerMainModel
         controller.showNotification(notificationFrame);
     }
 
-    private void reactToSegmentArrivedRequest(FileFrame segment) {
+    private void reactToSegmentArrivedRequest(SegmentFrame segment) {
         if(SAVE_TO_FILE){saveSegmentToFile(segment);}
         Picture picture=Picture.create(segment.name, segment.getData());
         if(!isStreaming){
@@ -84,53 +122,15 @@ public class ServerMainModel
     }
 
     private void reactToIncomingFileTransfer(FileFrame frame){
-        fileCreator.reactToIncomingFileTransfer(frame);
+        fileCreator.saveFileFrame(frame);
     }
 
-    File obtainFileTransferDirectory(){
-        //Main pictures folder
-        String directoryPath = getClass().getProtectionDomain().getCodeSource().getLocation().toString() + "saves";
-        directoryPath = directoryPath.substring(6);
-        File directory = new File(directoryPath);
-        if (! directory.exists()){
-            if(directory.mkdir()){
-                System.err.println("Saves directory created at: "+directoryPath);
-            }
-        }
-        return directory;
+    private void reactToIncomingBackup(BackupFileFrame frame){
+        fileCreator.saveBackupFrame(frame);
     }
 
-    private void createAndSaveFile(FileFrame frame,File directory){
-        File outputFile = new File(directory.getAbsolutePath()+"\\"+frame.name);
-
-        try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
-            outputStream.write(frame.getData());
-            System.out.println("File saved to " + outputFile.getAbsolutePath());
-            System.out.println(frame.getDataLength()+" bytes saved");
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("Unable to save the file");
-        }
-    }
-
-    private void saveSegmentToFile(FileFrame frame){
-        File directory = obtainFileTransferDirectory();
-
-        //current timestamped folder
-        String timestamp= frame.name.split("__part")[0];
-        String directoryPath = directory.getAbsolutePath()  + "/" + timestamp;
-        directory = new File(directoryPath);
-        if (! isStreaming){
-            if(directory.mkdir()){
-                System.err.println("New directory created at: "+directoryPath);
-            }
-        }
-
-        createAndSaveFile(frame,directory);
-    }
-
-    public void connectionFailed(Throwable exc){
-        System.err.println(exc.getMessage());
+    private void saveSegmentToFile(SegmentFrame frame){
+        fileCreator.saveSegment(frame);
     }
 
     public void stopConnection(){
@@ -151,21 +151,31 @@ public class ServerMainModel
         }
     }
 
-    public void sendFile(File file) {
-        FileCutter fileCutter = new FileCutter(file);
-        System.out.println("Sending file: "+file.getName());
-        SafeOutputStream outputStream = connectionManager.getOutputStream();
-        if(outputStream==null){System.err.println("You need to connect first!"); return;}
+    public void sendFiles(List<File> files, FrameType type, String backupID){
+        if(files == null) return;
+        new Thread(()->{
+            files.forEach(file -> {
+                FileCutter fileCutter = new FileCutter(file,type,backupID);
+                System.out.println("Sending file: "+file.getName());
+                SafeOutputStream outputStream = connectionManager.getOutputStream();
+                if(outputStream==null){System.err.println("You need to connect first!"); return;}
 
-        while(!fileCutter.isEnd()){
-            try {
-                outputStream.write(fileCutter.current().serialize().getAsBytes());
-                System.out.println("sent a piece of file");
-                fileCutter.next();
-            } catch (IOException e) {
-                e.printStackTrace();
-                break;
-            }
-        }
+                while(!fileCutter.isEnd()){
+                    try {
+                        outputStream.write(fileCutter.current().serialize().getAsBytes());
+                        System.out.println("sent a piece of file");
+                        fileCutter.next();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                }
+                System.out.println("File sent");
+            });
+        }).start();
+    }
+
+    public void sendFiles(File file, FrameType type, String backupId) {
+        sendFiles(List.of(file),type, backupId);
     }
 }
