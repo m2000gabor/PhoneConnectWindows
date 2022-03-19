@@ -76,7 +76,7 @@ public class FileCutter {
     private FileFrame getEndOfFileFrame(){
         return switch (fileType) {
             default -> new FileFrame(fileType, filename, new byte[0]);
-            case BACKUP_FILE -> new BackupFileFrame(fileType, filename, new byte[0], backupID);
+            case BACKUP_FILE,RESTORE_FILE -> new BackupFileFrame(fileType, filename, new byte[0], backupID);
             case SEGMENT -> new SegmentFrame(filename, new byte[0], backupID);
         };
     }

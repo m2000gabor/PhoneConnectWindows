@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ServerMainModel
@@ -74,6 +75,7 @@ public class ServerMainModel
     }
 
     private void restoreStartMessageArrived(StartRestoreMessageFrame messageFrame) {
+        System.out.println("Start restore message arrived! Restore dir: "+ messageFrame.backupId);
         List<File> filesToRestore = fileCreator.getFileManager().getFilesOfBackup(messageFrame.backupId);
         if(filesToRestore.isEmpty()){
             System.err.println("There is no backup directory with the name: "+messageFrame.backupId);
@@ -83,8 +85,8 @@ public class ServerMainModel
     }
 
     private void restoreGetMessageArrived(){
-        System.out.println("List backups");
-        List<String> folders = fileCreator.getFileManager().getBackupFolderNames();
+        System.out.println("Received: get backup list message");
+        ArrayList<String> folders = fileCreator.getFileManager().getBackupFolderNames();
         MessageFrame answerFrame = new RestorePostMessageFrame(folders);
         try {
             connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());
@@ -168,6 +170,7 @@ public class ServerMainModel
                         break;
                     }
                 }
+                System.out.println("File sent");
             });
         }).start();
     }
