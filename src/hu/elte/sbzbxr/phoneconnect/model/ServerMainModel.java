@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +87,7 @@ public class ServerMainModel
 
     private void restoreGetMessageArrived(){
         System.out.println("Received: get backup list message");
-        ArrayList<String> folders = fileCreator.getFileManager().getBackupFolderNames();
+        ArrayList<AbstractMap.SimpleImmutableEntry<String,Long>> folders = fileCreator.getFileManager().getBackupFolderNames();
         MessageFrame answerFrame = new RestorePostMessageFrame(folders);
         try {
             connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());

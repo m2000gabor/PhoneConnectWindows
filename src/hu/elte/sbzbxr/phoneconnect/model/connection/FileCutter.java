@@ -17,8 +17,10 @@ public class FileCutter {
     private final FrameType fileType;
     private final String filename;
     private final String backupID;
+    private final int fileTotalSize;
 
-    public FileCutter(File file,FrameType fileType, String backupID){
+    public FileCutter(File file, FrameType fileType, String backupID){
+        fileTotalSize = (int) file.length();
         this.fileType = fileType;
         InputStream inputStream1;
         this.filename=file.getName();
@@ -59,8 +61,10 @@ public class FileCutter {
                 }
                 if(read>=0){byteArrayOutputStream.write(read);}
                 switch (fileType) {
-                    case BACKUP_FILE, RESTORE_FILE -> current = new BackupFileFrame(fileType, filename, byteArrayOutputStream.toByteArray(), backupID);
-                    case FILE -> current = new FileFrame(fileType, filename, byteArrayOutputStream.toByteArray());
+                    case BACKUP_FILE, RESTORE_FILE -> current =
+                            new BackupFileFrame(fileType, filename, fileTotalSize, byteArrayOutputStream.toByteArray(), backupID);
+                    case FILE -> current =
+                            new FileFrame(fileType, filename, fileTotalSize, byteArrayOutputStream.toByteArray());
                 }
             }
         } catch (IOException e) {
@@ -75,8 +79,8 @@ public class FileCutter {
 
     private FileFrame getEndOfFileFrame(){
         return switch (fileType) {
-            default -> new FileFrame(fileType, filename, new byte[0]);
-            case BACKUP_FILE,RESTORE_FILE -> new BackupFileFrame(fileType, filename, new byte[0], backupID);
+            default -> new FileFrame(fileType, filename, 0, new byte[0]);
+            case BACKUP_FILE,RESTORE_FILE -> new BackupFileFrame(fileType, filename, 0, new byte[0], backupID);
             case SEGMENT -> new SegmentFrame(filename, new byte[0], backupID);
         };
     }

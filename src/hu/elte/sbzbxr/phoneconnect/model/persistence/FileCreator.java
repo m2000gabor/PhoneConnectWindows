@@ -58,6 +58,7 @@ public class FileCreator {
             }
         } catch (IOException | InvalidParameterException e) {
             e.printStackTrace();
+            connectionStopped();
         }
     }
 
@@ -79,7 +80,11 @@ public class FileCreator {
                     backupStream = null;
                     System.out.println("File fully arrived: " + frame.name);
                 } else {//append to file
-                    backupStream.write(frame.getData());
+                    try {
+                        backupStream.write(frame.getData());
+                    }catch (IOException e){
+                        onGoingBackupFilename=null;
+                    }
                 }
             } else {//other file transfer is in progress
                 throw new InvalidParameterException("Another file transfer is in progress. (" + onGoingBackupFilename + ")");
@@ -94,6 +99,10 @@ public class FileCreator {
     }
 
     public void connectionStopped() {
+        onGoingFileSaving = null;
+        onGoingSegmentSaving = null;
+        onGoingBackupFilename = null;
+        onGoingBackupDirectory = null;
         try {
             if(fileTransferStream!=null) fileTransferStream.close();
             if(backupStream!=null) backupStream.close();
