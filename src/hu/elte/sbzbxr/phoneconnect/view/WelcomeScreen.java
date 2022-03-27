@@ -52,14 +52,14 @@ public class WelcomeScreen extends JFrame {
         setTitle("PhoneConnect");
         setPreferredSize(new Dimension(300,300));
         pack();
-        setupDragAndDropSupport();
+        setupDragAndDropSupport(this,controller);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
     }
 
-    private void setupDragAndDropSupport(){
+    public static void setupDragAndDropSupport(JFrame frame,Controller controller){
         //Based on: https://stackoverflow.com/questions/811248/how-can-i-use-drag-and-drop-in-swing-to-get-file-path
-        this.setDropTarget(new DropTarget() {
+        frame.setDropTarget(new DropTarget() {
             public synchronized void drop(DropTargetDropEvent evt) {
                 try {
                     evt.acceptDrop(DnDConstants.ACTION_COPY);

@@ -13,7 +13,7 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 public class MainScreenJPG extends JFrame {
-    private Controller controller;
+    private final Controller controller;
     JPanel northPanel;
     JPanel centerPanel;
     JLabel ipAddressLabel;
@@ -22,7 +22,8 @@ public class MainScreenJPG extends JFrame {
     ImageCanvas canvas;
 
 
-    public MainScreenJPG(SocketAddress serverAddress){
+    public MainScreenJPG(SocketAddress serverAddress, Controller controller){
+        this.controller = controller;
         setFancyLookAndFeel();
 
         //window
@@ -66,6 +67,7 @@ public class MainScreenJPG extends JFrame {
         setPreferredSize(new Dimension(height/2,height));
         //setPreferredSize(new Dimension(Toolkit.getDefaultToolkit().getScreenSize().height/2,Toolkit.getDefaultToolkit().getScreenSize().height));
         pack();
+        WelcomeScreen.setupDragAndDropSupport(this, this.controller);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
     }
@@ -77,10 +79,6 @@ public class MainScreenJPG extends JFrame {
         } catch (Exception e) {
             System.err.println("No look and feel");
         }
-    }
-
-    public void setController(Controller controller) {
-        this.controller = controller;
     }
 
     public void showPicture(BufferedImage img){

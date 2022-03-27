@@ -44,8 +44,7 @@ public class Controller {
 
     private PictureProvider pictureProvider;
     public void startStreaming(Picture picture){
-        mainScreen= new MainScreenJPG(model.getServerAddress());
-        mainScreen.setController(this);
+        mainScreen= new MainScreenJPG(model.getServerAddress(),this );
         state=ControllerState.STREAM_RUNNING;
 
         pictureProvider=new PictureProvider();
@@ -98,7 +97,7 @@ public class Controller {
             tray.add(trayIcon);
         }
 
-        trayIcon.displayMessage(notification.title, notification.text, TrayIcon.MessageType.INFO);
+        trayIcon.displayMessage(notification.appName, notification.title+": "+notification.text, TrayIcon.MessageType.INFO);
     }
 
     public void sendFilesToPhone(java.util.List<File> files){
