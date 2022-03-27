@@ -19,6 +19,7 @@ public class MainScreenJPG extends JFrame {
     JLabel ipAddressLabel;
     JLabel connectionLabel;
     JLabel messageLabel;
+    JLabel metricsLabel;
     ImageCanvas canvas;
 
 
@@ -41,6 +42,9 @@ public class MainScreenJPG extends JFrame {
 
         messageLabel =new JLabel("No message");
         northPanel.add(messageLabel);
+
+        metricsLabel =new JLabel("No metrics");
+        northPanel.add(metricsLabel);
 
         if(Objects.isNull(serverAddress)){
             ipAddressLabel.setText("Ip: Unknown");
@@ -104,5 +108,9 @@ public class MainScreenJPG extends JFrame {
 
     public void initVideoPlayer() {
         showPictureFromFile("C:\\Users\\Gabor\\egyetem\\5felev_20_21_osz\\szakdoga\\vidik\\jpgStream_sample\\PhoneC_24_Jan_2022_11_49_06__part24.jpg");//todo change it
+    }
+
+    public void updateMetrics(String str){
+        metricsLabel.setText(str);
     }
 }

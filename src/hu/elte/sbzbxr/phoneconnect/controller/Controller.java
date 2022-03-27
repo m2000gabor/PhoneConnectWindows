@@ -2,6 +2,7 @@ package hu.elte.sbzbxr.phoneconnect.controller;
 
 import hu.elte.sbzbxr.phoneconnect.model.Picture;
 import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
+import hu.elte.sbzbxr.phoneconnect.model.connection.StreamMetrics;
 import hu.elte.sbzbxr.phoneconnect.model.connection.items.FrameType;
 import hu.elte.sbzbxr.phoneconnect.model.connection.items.NotificationFrame;
 import hu.elte.sbzbxr.phoneconnect.view.MainScreenJPG;
@@ -17,10 +18,12 @@ public class Controller {
     private final ServerMainModel model;
     private WelcomeScreen welcomeScreen;
     private MainScreenJPG mainScreen;
+    private StreamMetrics streamMetrics;
 
     public Controller() {
         state=ControllerState.WELCOME_DISCONNECTED;
         this.model= new ServerMainModel();
+        streamMetrics = new StreamMetrics();
     }
 
     public void start(){
@@ -62,6 +65,8 @@ public class Controller {
 
     public void segmentArrived(Picture picture) {
         pictureProvider.pictureArrived(picture);
+        streamMetrics.arrivedPicture(picture.getName());
+        mainScreen.updateMetrics(streamMetrics.getMetrics());
     }
 
     public void showNotification(NotificationFrame notification) {
