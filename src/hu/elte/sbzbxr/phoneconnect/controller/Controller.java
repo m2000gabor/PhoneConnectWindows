@@ -66,7 +66,7 @@ public class Controller {
     public void segmentArrived(Picture picture) {
         pictureProvider.pictureArrived(picture);
         streamMetrics.arrivedPicture(picture.getName());
-        mainScreen.updateMetrics(streamMetrics.getMetrics());
+        mainScreen.updateMetrics(streamMetrics.getCurrentMetrics(),streamMetrics.getOverallMetrics());
     }
 
     public void showNotification(NotificationFrame notification) {

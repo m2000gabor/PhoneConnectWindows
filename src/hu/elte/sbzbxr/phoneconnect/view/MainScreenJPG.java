@@ -110,7 +110,7 @@ public class MainScreenJPG extends JFrame {
         showPictureFromFile("C:\\Users\\Gabor\\egyetem\\5felev_20_21_osz\\szakdoga\\vidik\\jpgStream_sample\\PhoneC_24_Jan_2022_11_49_06__part24.jpg");//todo change it
     }
 
-    public void updateMetrics(String str){
-        metricsLabel.setText(str);
+    public void updateMetrics(String currentMetric, String overallMetrics){
+        metricsLabel.setText(currentMetric +" \t"+overallMetrics);
     }
 }

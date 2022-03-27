@@ -16,20 +16,20 @@ class StreamMetricsTest {
     @Test
     void test() {
         assertEquals(0,metrics.getMetrics());
-        metrics.arrivedPicture("a__part2.jpg");
-        metrics.arrivedPicture("a__part3.jpg");
-        metrics.arrivedPicture("a__part5.jpg");
+        metrics.arrivedPicture("a",2);
+        metrics.arrivedPicture("a",3);
+        metrics.arrivedPicture("a",5);
         assertEquals(25,metrics.getMetrics());
     }
 
     @Test
-    void resetTest() throws InterruptedException {
+    void resetTest() {
         test();
         metrics.reset();
         assertEquals(0,metrics.getMetrics());
-        metrics.arrivedPicture("b__part92.jpg");
-        metrics.arrivedPicture("b__part93.jpg");
-        metrics.arrivedPicture("b__part95.jpg");
+        metrics.arrivedPicture("b",92);
+        metrics.arrivedPicture("b",93);
+        metrics.arrivedPicture("b",95);
         assertEquals(25,metrics.getMetrics());
     }
 }

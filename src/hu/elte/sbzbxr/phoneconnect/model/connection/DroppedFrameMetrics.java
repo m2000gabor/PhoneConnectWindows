@@ -1,5 +1,7 @@
 package hu.elte.sbzbxr.phoneconnect.model.connection;
 
+import static hu.elte.sbzbxr.phoneconnect.model.connection.StreamMetrics.getPercentage;
+
 public class DroppedFrameMetrics {
     private String lastPicName ="";
     private int lastID;
@@ -11,19 +13,16 @@ public class DroppedFrameMetrics {
         reset();
     }
 
-    public void arrivedPicture(String name){
-        String currentName = getNameFromFilename(name);
-        int currentId=getIdFromFilename(name);
-
-        if(!currentName.equals(lastPicName)){
+    public void arrivedPicture(String filename,int fileID){
+        if(!filename.equals(lastPicName)){
             reset();
-            lastPicName=currentName;
-            lastID=currentId-1;
+            lastPicName= filename;
+            lastID= fileID -1;
         }
 
         arrivedFrames++;
-        droppedFrames += Math.abs(currentId-(lastID+1));
-        lastID=currentId;
+        droppedFrames += Math.abs(fileID -(lastID+1));
+        lastID= fileID;
     }
 
     public void reset() {
@@ -34,24 +33,7 @@ public class DroppedFrameMetrics {
     }
 
     public int getMetrics() {
-        if(droppedFrames+arrivedFrames==0) return 0;
-        return ((int) Math.round(100*(double)droppedFrames/(double)(arrivedFrames+droppedFrames)));
-    }
-
-    public static String getNameFromFilename(String name){
-        String[] arr = name.split("__");
-        return arr[0];
-    }
-
-    public static int getIdFromFilename(String name){
-        String[] arr = name.split("__");
-        int r=0;
-        try{
-            r=Integer.parseInt(arr[1].split("\\.")[0].substring(4));
-        }catch (Exception e){
-            System.err.println("Couldnt detect segment id");
-        }
-        return r;
+        return getPercentage(droppedFrames,arrivedFrames);
     }
 
 }
