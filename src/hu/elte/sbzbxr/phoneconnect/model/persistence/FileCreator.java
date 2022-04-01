@@ -1,8 +1,8 @@
 package hu.elte.sbzbxr.phoneconnect.model.persistence;
 
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.BackupFileFrame;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.FileFrame;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.SegmentFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.BackupFileFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.FileFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.SegmentFrame;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,9 +29,9 @@ public class FileCreator {
         if(!Objects.equals(onGoingSegmentSaving, frame.folderName) || !Objects.equals(frame.folderName, onGoingSegmentSaving)){
             onGoingSegmentSaving = fileSystemManager.createSegmentDirectory(frame.folderName).getName();
         }
-        try (FileOutputStream outputStream = fileSystemManager.createFile_SegmentSave(onGoingSegmentSaving, frame.name)){
+        try (FileOutputStream outputStream = fileSystemManager.createFile_SegmentSave(onGoingSegmentSaving, frame.filename)){
             outputStream.write(frame.getData());
-            System.out.println("Saved segment: " + frame.name);
+            System.out.println("Saved segment: " + frame.filename);
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -40,16 +40,16 @@ public class FileCreator {
     public void saveFileFrame(FileFrame frame) {
         try {
             if (onGoingFileSaving == null) {//nothing is in progress
-                onGoingFileSaving = frame.name;
+                onGoingFileSaving = frame.filename;
                 fileTransferStream = fileSystemManager.createFile_IncomingTransfer(onGoingFileSaving);
-                System.out.println("Saving file: " + frame.name + " started");
+                System.out.println("Saving file: " + frame.filename + " started");
                 fileTransferStream.write(frame.getData());
-            } else if (onGoingFileSaving.equals(frame.name)) {//this frame is a part of an ongoing transfer
+            } else if (onGoingFileSaving.equals(frame.filename)) {//this frame is a part of an ongoing transfer
                 if (isLastPieceOfFile(frame)) {//end signal
                     onGoingFileSaving = null;
                     fileTransferStream.close();
                     fileTransferStream = null;
-                    System.out.println("File fully arrived: " + frame.name);
+                    System.out.println("File fully arrived: " + frame.filename);
                 } else {//append to file
                     fileTransferStream.write(frame.getData());
                 }
@@ -69,16 +69,16 @@ public class FileCreator {
             }
 
             if (onGoingBackupFilename == null) {//nothing is in progress
-                onGoingBackupFilename = frame.name;
+                onGoingBackupFilename = frame.filename;
                 backupStream = fileSystemManager.createFile_Backup(onGoingBackupDirectory,onGoingBackupFilename);
-                System.out.println("Saving file: " + frame.name + " started");
+                System.out.println("Saving file: " + frame.filename + " started");
                 backupStream.write(frame.getData());
-            } else if (onGoingBackupFilename.equals(frame.name)) {//this frame is a part of an ongoing transfer
+            } else if (onGoingBackupFilename.equals(frame.filename)) {//this frame is a part of an ongoing transfer
                 if (isLastPieceOfFile(frame)) {//end signal
                     onGoingBackupFilename = null;
                     backupStream.close();
                     backupStream = null;
-                    System.out.println("File fully arrived: " + frame.name);
+                    System.out.println("File fully arrived: " + frame.filename);
                 } else {//append to file
                     try {
                         backupStream.write(frame.getData());

@@ -1,9 +1,9 @@
-package hu.elte.sbzbxr.phoneconnect.model.connection.items.message;
+package hu.elte.sbzbxr.phoneconnect.model.connection.common.items.message;
 
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.Deserializer;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.FrameType;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.NetworkFrame;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.Serializer;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.Deserializer;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.FrameType;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.NetworkFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.Serializer;
 
 import java.io.IOException;
 import java.io.InputStream;

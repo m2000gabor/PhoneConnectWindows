@@ -1,11 +1,11 @@
-package hu.elte.sbzbxr.phoneconnect.model.connection.items;
+package hu.elte.sbzbxr.phoneconnect.model.connection.common.items;
 
 /**
  * @implNote should be the same for both Windows and Android part
- * @version 1.1
+ * @version 1.0
  */
 public abstract class NetworkFrame {
-    public FrameType type;
+    public final FrameType type;
 
     protected NetworkFrame(FrameType type) {
         this.type = type;

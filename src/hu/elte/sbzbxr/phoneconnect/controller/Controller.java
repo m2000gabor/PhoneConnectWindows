@@ -3,8 +3,8 @@ package hu.elte.sbzbxr.phoneconnect.controller;
 import hu.elte.sbzbxr.phoneconnect.model.Picture;
 import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
 import hu.elte.sbzbxr.phoneconnect.model.connection.StreamMetrics;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.FrameType;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.NotificationFrame;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.FrameType;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.NotificationFrame;
 import hu.elte.sbzbxr.phoneconnect.view.MainScreenJPG;
 import hu.elte.sbzbxr.phoneconnect.view.WelcomeScreen;
 
@@ -107,7 +107,7 @@ public class Controller {
 
     public void sendFilesToPhone(java.util.List<File> files){
         for (File file : files) {
-            model.sendFiles(file, FrameType.FILE, null);
+            model.sendFiles(file, FrameType.FILE, null, 0L);
         }
     }
 
