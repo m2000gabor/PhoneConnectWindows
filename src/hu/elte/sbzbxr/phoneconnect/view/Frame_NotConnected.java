@@ -7,6 +7,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.SocketAddress;
 
+import static hu.elte.sbzbxr.phoneconnect.view.MenuInflater.inflateMenu;
+
 public class Frame_NotConnected extends JFrame {
     private final Controller controller;
     ImageCanvas canvas;
@@ -41,6 +43,7 @@ public class Frame_NotConnected extends JFrame {
         centerPanel.add( canvas, BorderLayout.CENTER );
 
         //UI final moves
+        inflateMenu(this);
         add(northPanel,BorderLayout.NORTH);
         add(centerPanel,BorderLayout.CENTER);
         setTitle("PhoneConnect");

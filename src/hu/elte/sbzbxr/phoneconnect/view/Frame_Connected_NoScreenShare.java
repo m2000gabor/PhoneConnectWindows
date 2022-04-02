@@ -45,6 +45,7 @@ public class Frame_Connected_NoScreenShare extends JFrame {
         centerPanel.add( functionsLabel, BorderLayout.CENTER );
 
         //UI final moves
+        MenuInflater.inflateMenu(this);
         add(northPanel,BorderLayout.NORTH);
         add(centerPanel,BorderLayout.CENTER);
         setTitle("PhoneConnect");

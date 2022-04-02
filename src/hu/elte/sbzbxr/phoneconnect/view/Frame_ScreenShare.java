@@ -63,6 +63,7 @@ public class Frame_ScreenShare extends JFrame {
 
 
         //UI final moves
+        MenuInflater.inflateMenu(this);
         add(northPanel,BorderLayout.NORTH);
         add(centerPanel,BorderLayout.CENTER);
         setTitle("PhoneConnect");
