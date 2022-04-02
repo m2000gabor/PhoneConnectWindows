@@ -126,7 +126,8 @@ public class ServerMainModel
     }
 
     private void reactToIncomingFileTransfer(FileFrame frame){
-        fileCreator.saveFileFrame(frame);
+        Runnable r = () -> controller.showNotification(new NotificationFrame( "File arrived", frame.filename + " arrived", null));
+        fileCreator.saveFileFrame(frame,r);
     }
 
     private void reactToIncomingBackup(BackupFileFrame frame){
@@ -176,10 +177,7 @@ public class ServerMainModel
                 }
                 System.out.println("File sent");
             });
+            controller.showNotification(new NotificationFrame("Sending completed", "Successfully sent the chosen files", null));
         }).start();
-    }
-
-    public void sendFiles(File file, FrameType type, String backupId, Long folderSize) {
-        sendFiles(List.of(file),type, backupId, folderSize);
     }
 }

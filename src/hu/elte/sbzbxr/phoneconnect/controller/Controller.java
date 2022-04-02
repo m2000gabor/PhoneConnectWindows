@@ -104,13 +104,15 @@ public class Controller {
             tray.add(trayIcon);
         }
 
-        trayIcon.displayMessage(notification.appName, notification.title+": "+notification.text, TrayIcon.MessageType.INFO);
+        if(notification.appName==null){
+            trayIcon.displayMessage(notification.title, notification.text, TrayIcon.MessageType.INFO);
+        }else{
+            trayIcon.displayMessage(notification.appName, notification.title+": "+notification.text, TrayIcon.MessageType.INFO);
+        }
     }
 
     public void sendFilesToPhone(java.util.List<File> files){
-        for (File file : files) {
-            model.sendFiles(file, FrameType.FILE, null, 0L);
-        }
+        model.sendFiles(files, FrameType.FILE, null, 0L);
     }
 
     public void disconnected(){

@@ -37,7 +37,7 @@ public class FileCreator {
         }
     }
 
-    public void saveFileFrame(FileFrame frame) {
+    public void saveFileFrame(FileFrame frame, Runnable notificationCallback) {
         try {
             if (onGoingFileSaving == null) {//nothing is in progress
                 onGoingFileSaving = frame.filename;
@@ -50,6 +50,7 @@ public class FileCreator {
                     fileTransferStream.close();
                     fileTransferStream = null;
                     System.out.println("File fully arrived: " + frame.filename);
+                    notificationCallback.run();
                 } else {//append to file
                     fileTransferStream.write(frame.getData());
                 }
