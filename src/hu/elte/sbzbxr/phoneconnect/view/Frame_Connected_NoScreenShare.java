@@ -17,7 +17,6 @@ public class Frame_Connected_NoScreenShare extends JFrame {
     JPanel centerPanel;
     JLabel ipAddressLabel;
     JLabel connectionLabel;
-    JLabel messageLabel;
 
     public Frame_Connected_NoScreenShare(Controller controller, SocketAddress serverAddress){
         this.controller=controller;
@@ -33,17 +32,16 @@ public class Frame_Connected_NoScreenShare extends JFrame {
         String ipAddress = getIpAddress(serverAddress);
         ipAddressLabel = new JLabel("IP address and port: " +ipAddress);
         northPanel.add(ipAddressLabel);
+        northPanel.add(new JSeparator());
 
         connectionLabel = new JLabel("Connected");
         northPanel.add(connectionLabel);
-
-        messageLabel = new JLabel("");
-        northPanel.add(messageLabel);
+        northPanel.add(new JSeparator());
 
         //Center
         centerPanel = new JPanel(new BorderLayout());
-        JLabel functionsLabel = new JLabel("Drag&Drop files here, to send them to your phone.\n" +
-                "You can toggle more functions from your phone.",SwingConstants.CENTER);
+        JLabel functionsLabel = new JLabel("<html>Drag&Drop files here, to send them to your phone.<br>" +
+                "You can toggle more functions from your phone.</html>",SwingConstants.CENTER);
         centerPanel.add( functionsLabel, BorderLayout.CENTER );
 
         //UI final moves

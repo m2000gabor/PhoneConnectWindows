@@ -14,7 +14,6 @@ public class Frame_NotConnected extends JFrame {
     JPanel centerPanel;
     JLabel ipAddressLabel;
     JLabel connectionLabel;
-    JLabel messageLabel;
 
     public Frame_NotConnected(Controller controller,SocketAddress serverAddress){
         this.controller=controller;
@@ -30,13 +29,11 @@ public class Frame_NotConnected extends JFrame {
         String ipAddress = getIpAddress(serverAddress);
         ipAddressLabel = new JLabel("IP address and port: " +ipAddress);
         northPanel.add(ipAddressLabel);
+        northPanel.add(new JSeparator());
 
-
-        connectionLabel =new JLabel("Not connected. Open the PhoneConnect app and scan the QR code or type in the IP address and port shown above.");
+        connectionLabel =new JLabel("<html>Not connected. Open the PhoneConnect app and scan the QR code or type in the IP address and port shown above.</html>");
         northPanel.add(connectionLabel);
-
-        messageLabel =new JLabel("");
-        northPanel.add(messageLabel);
+        northPanel.add(new JSeparator());
 
         //Center
         centerPanel = new JPanel(new BorderLayout());
