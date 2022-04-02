@@ -1,7 +1,6 @@
 package hu.elte.sbzbxr.phoneconnect.view;
 
 import hu.elte.sbzbxr.phoneconnect.controller.Controller;
-import hu.elte.sbzbxr.phoneconnect.model.QrGenerator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,17 +9,17 @@ import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
+import java.net.SocketAddress;
 
-public class WelcomeScreen extends JFrame {
+public class Frame_Connected_NoScreenShare extends JFrame {
     private final Controller controller;
-    ImageCanvas canvas;
     JPanel northPanel;
     JPanel centerPanel;
     JLabel ipAddressLabel;
     JLabel connectionLabel;
     JLabel messageLabel;
 
-    public WelcomeScreen(Controller controller){
+    public Frame_Connected_NoScreenShare(Controller controller, SocketAddress serverAddress){
         this.controller=controller;
         setFancyLookAndFeel();
 
@@ -31,20 +30,21 @@ public class WelcomeScreen extends JFrame {
         northPanel = new JPanel();
         northPanel.setLayout(new BoxLayout(northPanel,BoxLayout.PAGE_AXIS));
 
-        ipAddressLabel =new JLabel("Ip:"+ "unknown");
+        String ipAddress = getIpAddress(serverAddress);
+        ipAddressLabel = new JLabel("IP address and port: " +ipAddress);
         northPanel.add(ipAddressLabel);
 
-        connectionLabel =new JLabel();
+        connectionLabel = new JLabel("Connected");
         northPanel.add(connectionLabel);
-        setConnectionLabel(false);
 
-        messageLabel =new JLabel("");
+        messageLabel = new JLabel("");
         northPanel.add(messageLabel);
 
         //Center
         centerPanel = new JPanel(new BorderLayout());
-        canvas = new ImageCanvas();
-        centerPanel.add( canvas, BorderLayout.CENTER );
+        JLabel functionsLabel = new JLabel("Drag&Drop files here, to send them to your phone.\n" +
+                "You can toggle more functions from your phone.",SwingConstants.CENTER);
+        centerPanel.add( functionsLabel, BorderLayout.CENTER );
 
         //UI final moves
         add(northPanel,BorderLayout.NORTH);
@@ -72,10 +72,6 @@ public class WelcomeScreen extends JFrame {
         });
     }
 
-    private void setupQrCode(String str){
-        canvas.showImage(QrGenerator.getQr(str));
-    }
-
     private void setFancyLookAndFeel() {
         try
         {
@@ -85,16 +81,11 @@ public class WelcomeScreen extends JFrame {
         }
     }
 
-    public void setIpAddress(String ipAddress){
-        ipAddressLabel.setText("IP address and port: " + ipAddress);
-        setupQrCode(ipAddress);
-    }
-
-    public void setConnectionLabel(boolean b){
-        if (b){
-            connectionLabel.setText("Connected");
+    private static String getIpAddress(SocketAddress serverAddress){
+        if(serverAddress==null){
+            return "Ip: unknown";
         }else{
-            connectionLabel.setText("Not connected");
+            return serverAddress.toString().replace("/","");
         }
     }
 }

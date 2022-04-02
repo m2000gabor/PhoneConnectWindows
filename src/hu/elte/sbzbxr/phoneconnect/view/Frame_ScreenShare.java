@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Objects;
 
-public class MainScreenJPG extends JFrame {
+import static hu.elte.sbzbxr.phoneconnect.view.Frame_Connected_NoScreenShare.setupDragAndDropSupport;
+
+public class Frame_ScreenShare extends JFrame {
     private final Controller controller;
     JPanel northPanel;
     JPanel centerPanel;
@@ -23,7 +25,7 @@ public class MainScreenJPG extends JFrame {
     ImageCanvas canvas;
 
 
-    public MainScreenJPG(SocketAddress serverAddress, Controller controller){
+    public Frame_ScreenShare(SocketAddress serverAddress, Controller controller){
         this.controller = controller;
         setFancyLookAndFeel();
 
@@ -71,7 +73,7 @@ public class MainScreenJPG extends JFrame {
         setPreferredSize(new Dimension(height/2,height));
         //setPreferredSize(new Dimension(Toolkit.getDefaultToolkit().getScreenSize().height/2,Toolkit.getDefaultToolkit().getScreenSize().height));
         pack();
-        WelcomeScreen.setupDragAndDropSupport(this, this.controller);
+        setupDragAndDropSupport(this, this.controller);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
     }

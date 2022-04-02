@@ -72,6 +72,7 @@ public class ServerMainModel
             case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream).message);
             case RESTORE_GET_AVAILABLE -> restoreGetMessageArrived();
             case RESTORE_START_RESTORE -> restoreStartMessageArrived(StartRestoreMessageFrame.deserialize(inputStream));
+            case END_OF_STREAM -> controller.endOfStreaming();
         }
 
     }
