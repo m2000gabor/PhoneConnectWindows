@@ -76,9 +76,7 @@ public class FileCreator {
                 backupStream.write(frame.getData());
             } else if (onGoingBackupFilename.equals(frame.filename)) {//this frame is a part of an ongoing transfer
                 if (isLastPieceOfFile(frame)) {//end signal
-                    onGoingBackupFilename = null;
-                    backupStream.close();
-                    backupStream = null;
+                    endCurrentFile();
                     System.out.println("File fully arrived: " + frame.filename);
                 } else {//append to file
                     try {
@@ -88,11 +86,18 @@ public class FileCreator {
                     }
                 }
             } else {//other file transfer is in progress
-                throw new InvalidParameterException("Another file transfer is in progress. (" + onGoingBackupFilename + ")");
+                endCurrentFile();
+                throw new InvalidParameterException("Another file transfer is in progress. Instead of " + onGoingBackupFilename + ", got "+frame.filename);
             }
         } catch (IOException | InvalidParameterException e) {
             e.printStackTrace();
         }
+    }
+
+    private void endCurrentFile() throws IOException {
+        onGoingBackupFilename = null;
+        if(backupStream!=null) backupStream.close();
+        backupStream = null;
     }
 
     private boolean isLastPieceOfFile(FileFrame frame){
