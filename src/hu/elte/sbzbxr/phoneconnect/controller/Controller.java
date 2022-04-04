@@ -2,10 +2,12 @@ package hu.elte.sbzbxr.phoneconnect.controller;
 
 import hu.elte.sbzbxr.phoneconnect.model.Picture;
 import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.FrameType;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.NotificationFrame;
-import hu.elte.sbzbxr.phoneconnect.view.MainScreenJPG;
-import hu.elte.sbzbxr.phoneconnect.view.WelcomeScreen;
+import hu.elte.sbzbxr.phoneconnect.model.connection.StreamMetrics;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.FrameType;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.NotificationFrame;
+import hu.elte.sbzbxr.phoneconnect.view.Frame_Connected_NoScreenShare;
+import hu.elte.sbzbxr.phoneconnect.view.Frame_NotConnected;
+import hu.elte.sbzbxr.phoneconnect.view.Frame_ScreenShare;
 
 import java.awt.*;
 import java.io.File;
@@ -13,56 +15,60 @@ import java.net.SocketAddress;
 import java.util.Objects;
 
 public class Controller {
-    private ControllerState state;
+    private ControllerState currentState;
     private final ServerMainModel model;
-    private WelcomeScreen welcomeScreen;
-    private MainScreenJPG mainScreen;
+    private final StreamMetrics streamMetrics;
+
+    private Frame_NotConnected frameNotConnected;
+    private Frame_Connected_NoScreenShare frameConnectedNoScreenShare;
+    private Frame_ScreenShare frameScreenShare;
 
     public Controller() {
-        state=ControllerState.WELCOME_DISCONNECTED;
+        currentState =ControllerState.WELCOME_DISCONNECTED;
         this.model= new ServerMainModel();
+        streamMetrics = new StreamMetrics();
     }
 
     public void start(){
         SocketAddress serverAddress = model.start();
         if(Objects.isNull(serverAddress)){
             System.err.println("Failed to establish connection");
-        }else{
-            welcomeScreen.setIpAddress(serverAddress.toString().replace("/",""));
         }
+        frameNotConnected = new Frame_NotConnected(this,serverAddress);
     }
 
     public void init() {
-        welcomeScreen = new WelcomeScreen(this);
         model.setController(this);
     }
 
     public void connectionEstablished(){
-        welcomeScreen.setConnectionLabel(true);
-        state=ControllerState.WELCOME_CONNECTED;
+        disposeAll();
+        frameConnectedNoScreenShare = new Frame_Connected_NoScreenShare(this, model.getServerAddress());
+        currentState = ControllerState.WELCOME_CONNECTED;
     }
 
     private PictureProvider pictureProvider;
     public void startStreaming(Picture picture){
-        mainScreen= new MainScreenJPG(model.getServerAddress());
-        mainScreen.setController(this);
-        state=ControllerState.STREAM_RUNNING;
+        disposeAll();
+        frameScreenShare = new Frame_ScreenShare(model.getServerAddress(),this );
+        currentState = ControllerState.STREAM_RUNNING;
 
         pictureProvider=new PictureProvider();
         pictureProvider.pictureArrived(picture);
 
-        welcomeScreen.dispose();
-        mainScreen.initVideoPlayer();
+        frameScreenShare.initVideoPlayer();
         pictureProvider.askNextPicture(this);
     }
 
     public void showPicture(Picture picture){
-        mainScreen.showPicture(picture.getImg());
+        frameScreenShare.showPicture(picture.getImg());
         pictureProvider.askNextPicture(this);
     }
 
     public void segmentArrived(Picture picture) {
         pictureProvider.pictureArrived(picture);
+        streamMetrics.arrivedPicture(picture.getName());
+        frameScreenShare.updateMetrics(streamMetrics.getCurrentMetrics(),streamMetrics.getOverallMetrics());
     }
 
     public void showNotification(NotificationFrame notification) {
@@ -98,27 +104,37 @@ public class Controller {
             tray.add(trayIcon);
         }
 
-        trayIcon.displayMessage(notification.title, notification.text, TrayIcon.MessageType.INFO);
+        if(notification.appName==null){
+            trayIcon.displayMessage(notification.title, notification.text, TrayIcon.MessageType.INFO);
+        }else{
+            trayIcon.displayMessage(notification.appName, notification.title+": "+notification.text, TrayIcon.MessageType.INFO);
+        }
     }
 
     public void sendFilesToPhone(java.util.List<File> files){
-        for (File file : files) {
-            model.sendFiles(file, FrameType.FILE, null);
-        }
+        model.sendFiles(files, FrameType.FILE, null, 0L);
     }
 
     public void disconnected(){
-        switch (state){
+        switch (currentState){
             case WELCOME_DISCONNECTED -> {return;}
-            case WELCOME_CONNECTED -> welcomeScreen.setConnectionLabel(false);
-            case STREAM_RUNNING -> {
-                welcomeScreen = new WelcomeScreen(this);
-                SocketAddress serverAddress = model.getServerAddress();
-                welcomeScreen.setIpAddress(serverAddress.toString().replace("/",""));
-                mainScreen.dispose();
+            case WELCOME_CONNECTED, STREAM_RUNNING -> {
+                disposeAll();
+                frameNotConnected = new Frame_NotConnected(this, model.getServerAddress());
             }
         }
 
-        state=ControllerState.WELCOME_DISCONNECTED;
+        currentState = ControllerState.WELCOME_DISCONNECTED;
+    }
+
+    private void disposeAll(){
+        if(frameConnectedNoScreenShare!=null) frameConnectedNoScreenShare.dispose();
+        if(frameNotConnected!=null) frameNotConnected.dispose();
+        if(frameScreenShare!=null) frameScreenShare.dispose();
+    }
+
+    public void endOfStreaming() {
+        disposeAll();
+        frameConnectedNoScreenShare = new Frame_Connected_NoScreenShare(this, model.getServerAddress());
     }
 }

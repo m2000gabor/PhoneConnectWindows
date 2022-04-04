@@ -2,16 +2,18 @@ package hu.elte.sbzbxr.phoneconnect.model;
 
 import hu.elte.sbzbxr.phoneconnect.controller.Controller;
 import hu.elte.sbzbxr.phoneconnect.model.connection.ConnectionManager;
-import hu.elte.sbzbxr.phoneconnect.model.connection.FileCutter;
+import hu.elte.sbzbxr.phoneconnect.model.connection.FileCutterCreator;
 import hu.elte.sbzbxr.phoneconnect.model.connection.SafeOutputStream;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.*;
-import hu.elte.sbzbxr.phoneconnect.model.connection.items.message.*;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.FileCutter;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.*;
+import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.message.*;
 import hu.elte.sbzbxr.phoneconnect.model.persistence.FileCreator;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +72,7 @@ public class ServerMainModel
             case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream).message);
             case RESTORE_GET_AVAILABLE -> restoreGetMessageArrived();
             case RESTORE_START_RESTORE -> restoreStartMessageArrived(StartRestoreMessageFrame.deserialize(inputStream));
+            case END_OF_STREAM -> controller.endOfStreaming();
         }
 
     }
@@ -77,16 +80,17 @@ public class ServerMainModel
     private void restoreStartMessageArrived(StartRestoreMessageFrame messageFrame) {
         System.out.println("Start restore message arrived! Restore dir: "+ messageFrame.backupId);
         List<File> filesToRestore = fileCreator.getFileManager().getFilesOfBackup(messageFrame.backupId);
+        long folderSize = filesToRestore.stream().map(File::length).reduce(0L,Long::sum);
         if(filesToRestore.isEmpty()){
             System.err.println("There is no backup directory with the name: "+messageFrame.backupId);
         }else{
-            sendFiles(filesToRestore,FrameType.RESTORE_FILE, messageFrame.backupId);
+            sendFiles(filesToRestore,FrameType.RESTORE_FILE, messageFrame.backupId, folderSize);
         }
     }
 
     private void restoreGetMessageArrived(){
         System.out.println("Received: get backup list message");
-        ArrayList<String> folders = fileCreator.getFileManager().getBackupFolderNames();
+        ArrayList<AbstractMap.SimpleImmutableEntry<String,Long>> folders = fileCreator.getFileManager().getBackupFolderNames();
         MessageFrame answerFrame = new RestorePostMessageFrame(folders);
         try {
             connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());
@@ -113,7 +117,7 @@ public class ServerMainModel
 
     private void reactToSegmentArrivedRequest(SegmentFrame segment) {
         if(SAVE_TO_FILE){saveSegmentToFile(segment);}
-        Picture picture=Picture.create(segment.name, segment.getData());
+        Picture picture=Picture.create(segment.filename, segment.getData());
         if(!isStreaming){
             controller.startStreaming(picture);
             isStreaming=true;// If this is the first segment, start the streaming
@@ -122,7 +126,8 @@ public class ServerMainModel
     }
 
     private void reactToIncomingFileTransfer(FileFrame frame){
-        fileCreator.saveFileFrame(frame);
+        Runnable r = () -> controller.showNotification(new NotificationFrame( "File arrived", frame.filename + " arrived", null));
+        fileCreator.saveFileFrame(frame,r);
     }
 
     private void reactToIncomingBackup(BackupFileFrame frame){
@@ -151,11 +156,11 @@ public class ServerMainModel
         }
     }
 
-    public void sendFiles(List<File> files, FrameType type, String backupID){
+    public void sendFiles(List<File> files, FrameType type, String backupID, Long folderSize){
         if(files == null) return;
         new Thread(()->{
             files.forEach(file -> {
-                FileCutter fileCutter = new FileCutter(file,type,backupID);
+                FileCutter fileCutter = FileCutterCreator.create(file,type,backupID,folderSize);
                 System.out.println("Sending file: "+file.getName());
                 SafeOutputStream outputStream = connectionManager.getOutputStream();
                 if(outputStream==null){System.err.println("You need to connect first!"); return;}
@@ -172,10 +177,7 @@ public class ServerMainModel
                 }
                 System.out.println("File sent");
             });
+            controller.showNotification(new NotificationFrame("Sending completed", "Successfully sent the chosen files", null));
         }).start();
-    }
-
-    public void sendFiles(File file, FrameType type, String backupId) {
-        sendFiles(List.of(file),type, backupId);
     }
 }

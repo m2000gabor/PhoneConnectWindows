@@ -12,17 +12,21 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Objects;
 
-public class MainScreenJPG extends JFrame {
-    private Controller controller;
+import static hu.elte.sbzbxr.phoneconnect.view.Frame_Connected_NoScreenShare.setupDragAndDropSupport;
+
+public class Frame_ScreenShare extends JFrame {
+    private final Controller controller;
     JPanel northPanel;
     JPanel centerPanel;
     JLabel ipAddressLabel;
     JLabel connectionLabel;
     JLabel messageLabel;
+    JLabel metricsLabel;
     ImageCanvas canvas;
 
 
-    public MainScreenJPG(SocketAddress serverAddress){
+    public Frame_ScreenShare(SocketAddress serverAddress, Controller controller){
+        this.controller = controller;
         setFancyLookAndFeel();
 
         //window
@@ -41,6 +45,9 @@ public class MainScreenJPG extends JFrame {
         messageLabel =new JLabel("No message");
         northPanel.add(messageLabel);
 
+        metricsLabel =new JLabel("No metrics");
+        northPanel.add(metricsLabel);
+
         if(Objects.isNull(serverAddress)){
             ipAddressLabel.setText("Ip: Unknown");
             connectionLabel.setText("Not connected");
@@ -56,6 +63,7 @@ public class MainScreenJPG extends JFrame {
 
 
         //UI final moves
+        MenuInflater.inflateMenu(this);
         add(northPanel,BorderLayout.NORTH);
         add(centerPanel,BorderLayout.CENTER);
         setTitle("PhoneConnect");
@@ -66,6 +74,7 @@ public class MainScreenJPG extends JFrame {
         setPreferredSize(new Dimension(height/2,height));
         //setPreferredSize(new Dimension(Toolkit.getDefaultToolkit().getScreenSize().height/2,Toolkit.getDefaultToolkit().getScreenSize().height));
         pack();
+        setupDragAndDropSupport(this, this.controller);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
     }
@@ -77,10 +86,6 @@ public class MainScreenJPG extends JFrame {
         } catch (Exception e) {
             System.err.println("No look and feel");
         }
-    }
-
-    public void setController(Controller controller) {
-        this.controller = controller;
     }
 
     public void showPicture(BufferedImage img){
@@ -106,5 +111,9 @@ public class MainScreenJPG extends JFrame {
 
     public void initVideoPlayer() {
         showPictureFromFile("C:\\Users\\Gabor\\egyetem\\5felev_20_21_osz\\szakdoga\\vidik\\jpgStream_sample\\PhoneC_24_Jan_2022_11_49_06__part24.jpg");//todo change it
+    }
+
+    public void updateMetrics(String currentMetric, String overallMetrics){
+        metricsLabel.setText(currentMetric +" \t"+overallMetrics);
     }
 }

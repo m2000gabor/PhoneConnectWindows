@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -91,10 +92,10 @@ public class FileSystemManager {
         return openOutputStream(new File(getBackupDirectory() + File.separator + directory + File.separator + filename));
     }
 
-    public ArrayList<String> getBackupFolderNames() {
+    public ArrayList<AbstractMap.SimpleImmutableEntry<String,Long>> getBackupFolderNames() {
         File[] fileArr = getBackupDirectory().listFiles();
         if(fileArr == null) fileArr= new File[0];
-        return new ArrayList<>(Stream.of(fileArr).map(File::getName).toList());
+        return new ArrayList<>(Stream.of(fileArr).map(f -> new AbstractMap.SimpleImmutableEntry<>(f.getName(), f.length())).toList());
     }
 
     public List<File> getFilesOfBackup(String dirName) {

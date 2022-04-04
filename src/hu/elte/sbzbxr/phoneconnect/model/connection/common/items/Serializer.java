@@ -1,8 +1,9 @@
-package hu.elte.sbzbxr.phoneconnect.model.connection.items;
+package hu.elte.sbzbxr.phoneconnect.model.connection.common.items;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
+//version 1.2
 public class Serializer {
     private final ByteArrayOutputStream outputStream;
 
@@ -22,6 +23,18 @@ public class Serializer {
         byte[] length = ByteBuffer.allocate(4).putInt(data.length).array();
         for (byte b : length) outputStream.write(b);
         for (byte b : data) outputStream.write(b);
+        return this;
+    }
+
+    public Serializer addField(int i) {
+        byte[] arr = ByteBuffer.allocate(4).putInt(i).array();
+        for(byte b : arr) outputStream.write(b);
+        return this;
+    }
+
+    public Serializer addField(long i) {
+        byte[] arr = ByteBuffer.allocate(8).putLong(i).array();
+        for(byte b : arr) outputStream.write(b);
         return this;
     }
 
