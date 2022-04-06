@@ -56,7 +56,7 @@ public class Controller {
         pictureProvider=new PictureProvider();
         pictureProvider.pictureArrived(picture);
 
-        frameScreenShare.initVideoPlayer();
+        //frameScreenShare.initVideoPlayer();
         pictureProvider.askNextPicture(this);
     }
 
@@ -66,6 +66,9 @@ public class Controller {
     }
 
     public void segmentArrived(Picture picture) {
+        if(currentState!=ControllerState.STREAM_RUNNING){
+            startStreaming(picture);
+        }
         pictureProvider.pictureArrived(picture);
         streamMetrics.arrivedPicture(picture.getName());
         frameScreenShare.updateMetrics(streamMetrics.getCurrentMetrics(),streamMetrics.getOverallMetrics());
@@ -89,6 +92,7 @@ public class Controller {
 
     private TrayIcon trayIcon = null;
     public void displayTray(NotificationFrame notification) throws AWTException {
+        if(!SystemTray.isSupported()) return;
         if(trayIcon == null){
             //Obtain only one instance of the SystemTray object
             SystemTray tray = SystemTray.getSystemTray();
@@ -96,11 +100,11 @@ public class Controller {
             Image image = Toolkit.getDefaultToolkit().createImage("resources/icon.jpg");
             //Alternative (if the icon is on the classpath):
             //Image image = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.png"));
-            trayIcon = new TrayIcon(image, "Tray Demo");
+            trayIcon = new TrayIcon(image, "PhoneConnect notification icon");
             //Let the system resize the image if needed
             trayIcon.setImageAutoSize(true);
             //Set tooltip text for the tray icon
-            trayIcon.setToolTip("System tray icon demo");
+            trayIcon.setToolTip("PhoneConnect notification");
             tray.add(trayIcon);
         }
 
