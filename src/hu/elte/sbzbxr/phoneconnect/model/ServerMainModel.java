@@ -16,6 +16,7 @@ import java.net.SocketAddress;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ServerMainModel
 {
@@ -159,11 +160,14 @@ public class ServerMainModel
     public void sendFiles(List<File> files, FrameType type, String backupID, Long folderSize){
         if(files == null) return;
         new Thread(()->{
+            AtomicBoolean errorOccurred= new AtomicBoolean(false);
             files.forEach(file -> {
                 FileCutter fileCutter = FileCutterCreator.create(file,type,backupID,folderSize);
                 System.out.println("Sending file: "+file.getName());
                 SafeOutputStream outputStream = connectionManager.getOutputStream();
-                if(outputStream==null){System.err.println("You need to connect first!"); return;}
+                if(outputStream==null){System.err.println("You need to connect first!");
+                    errorOccurred.set(true);
+                    return;}
 
                 while(!fileCutter.isEnd()){
                     try {
@@ -172,12 +176,22 @@ public class ServerMainModel
                         fileCutter.next();
                     } catch (IOException e) {
                         e.printStackTrace();
+                        errorOccurred.set(true);
                         break;
                     }
                 }
-                System.out.println("File sent");
+                if(!errorOccurred.get()){
+                    System.out.println("File sent");
+                }else{
+                    System.err.println("Error occurred, file not sent");
+                }
+
             });
-            controller.showNotification(new NotificationFrame("Sending completed", "Successfully sent the chosen files", null));
+            if(!errorOccurred.get()){
+                controller.showNotification(new NotificationFrame("Sending completed", "Successfully sent the chosen files", null));
+            }else{
+                controller.showNotification(new NotificationFrame("Sending failed", "Failed to send the chosen files", null));
+            }
         }).start();
     }
 }
