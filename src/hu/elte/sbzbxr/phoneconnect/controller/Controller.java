@@ -18,6 +18,7 @@ public class Controller {
     private ControllerState currentState;
     private final ServerMainModel model;
     private final StreamMetrics streamMetrics;
+    private final PictureProvider pictureProvider = new PictureProvider(this::showPicture);
 
     private Frame_NotConnected frameNotConnected;
     private Frame_Connected_NoScreenShare frameConnectedNoScreenShare;
@@ -47,28 +48,20 @@ public class Controller {
         currentState = ControllerState.WELCOME_CONNECTED;
     }
 
-    private PictureProvider pictureProvider;
-    public void startStreaming(Picture picture){
+    public void startStreaming(){
         disposeAll();
         frameScreenShare = new Frame_ScreenShare(model.getServerAddress(),this );
         currentState = ControllerState.STREAM_RUNNING;
 
-        pictureProvider=new PictureProvider();
-        pictureProvider.pictureArrived(picture);
-
-        //frameScreenShare.initVideoPlayer();
-        pictureProvider.askNextPicture(this);
+        pictureProvider.start();
     }
 
     public void showPicture(Picture picture){
+        if(frameScreenShare==null) return;
         frameScreenShare.showPicture(picture.getImg());
-        pictureProvider.askNextPicture(this);
     }
 
     public void segmentArrived(Picture picture) {
-        if(currentState!=ControllerState.STREAM_RUNNING){
-            startStreaming(picture);
-        }
         pictureProvider.pictureArrived(picture);
         streamMetrics.arrivedPicture(picture.getName());
         frameScreenShare.updateMetrics(streamMetrics.getCurrentMetrics(),streamMetrics.getOverallMetrics());
@@ -139,6 +132,8 @@ public class Controller {
 
     public void endOfStreaming() {
         disposeAll();
+        pictureProvider.stop();
+        currentState=ControllerState.STREAM_STOPPED;
         frameConnectedNoScreenShare = new Frame_Connected_NoScreenShare(this, model.getServerAddress());
     }
 }

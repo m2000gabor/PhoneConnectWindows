@@ -25,7 +25,6 @@ public class ServerMainModel
     private Controller controller;
     private ConnectionManager connectionManager;
     boolean isRunning=false;
-    boolean isStreaming=false;
 
     public ServerMainModel() {connectionManager=new ConnectionManager();}
 
@@ -73,6 +72,7 @@ public class ServerMainModel
             case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream).message);
             case RESTORE_GET_AVAILABLE -> restoreGetMessageArrived();
             case RESTORE_START_RESTORE -> restoreStartMessageArrived(StartRestoreMessageFrame.deserialize(inputStream));
+            case START_OF_STREAM -> controller.startStreaming();
             case END_OF_STREAM -> controller.endOfStreaming();
         }
 
@@ -119,10 +119,6 @@ public class ServerMainModel
     private void reactToSegmentArrivedRequest(SegmentFrame segment) {
         if(SAVE_TO_FILE){saveSegmentToFile(segment);}
         Picture picture=Picture.create(segment.filename, segment.getData());
-        if(!isStreaming){
-            controller.startStreaming(picture);
-            isStreaming=true;// If this is the first segment, start the streaming
-        }
         controller.segmentArrived(picture);
     }
 
@@ -141,7 +137,7 @@ public class ServerMainModel
 
     public void stopConnection(){
         isRunning=false;
-        isStreaming=false;
+        controller.endOfStreaming();
         fileCreator.connectionStopped();
     }
 
