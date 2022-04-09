@@ -25,7 +25,10 @@ public class PictureProvider {
         executor.submit(()->{
             while(isRunning.get()){
                 try {
-                    callback.consume(arrived.take());
+                    Picture p = arrived.take();
+                    long timestamp_pictureTook = System.currentTimeMillis();
+                    p.addTimestamp("pictureTook",timestamp_pictureTook);
+                    callback.consume(p);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -35,6 +38,8 @@ public class PictureProvider {
 
     public void pictureArrived(Picture pic){
         if(!isRunning.get()){start();}
+        long timestamp_pictureInserted = System.currentTimeMillis();
+        pic.addTimestamp("pictureInserted",timestamp_pictureInserted);
         if(!arrived.offer(pic)){
             System.err.println("Too much segment arrived, one is thrown away");
         }

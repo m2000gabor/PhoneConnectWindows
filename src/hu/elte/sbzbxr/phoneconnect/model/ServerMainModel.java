@@ -48,7 +48,14 @@ public class ServerMainModel
                 //System.out.println("Frame arrived with type: " + type);
                 switch (type) {
                     case INTERNAL_MESSAGE -> reactToInternalMessage(i);
-                    case SEGMENT -> reactToSegmentArrivedRequest(SegmentFrame.deserialize(type,i));
+                    case SEGMENT -> {
+                        long timestamp_beforeDeserialization = System.currentTimeMillis();
+                        SegmentFrame segmentFrame = SegmentFrame.deserialize(type,i);
+                        long timestamp_afterDeserialization = System.currentTimeMillis();
+                        segmentFrame.addTimestamp("beforeDeserialization",timestamp_beforeDeserialization);
+                        segmentFrame.addTimestamp("afterDeserialization",timestamp_afterDeserialization);
+                        reactToSegmentArrivedRequest(segmentFrame);
+                    }
                     case NOTIFICATION -> reactToNotificationArrived(NotificationFrame.deserialize(i));
                     case FILE -> reactToIncomingFileTransfer(FileFrame.deserialize(type,i));
                     case BACKUP_FILE -> reactToIncomingBackup(BackupFileFrame.deserialize(type,i));
@@ -118,7 +125,12 @@ public class ServerMainModel
 
     private void reactToSegmentArrivedRequest(SegmentFrame segment) {
         if(SAVE_TO_FILE){saveSegmentToFile(segment);}
-        Picture picture=Picture.create(segment.filename, segment.getData());
+        long timestamp_beforePictureCreation = System.currentTimeMillis();
+        Picture picture=Picture.create(segment.filename, segment.getData(),segment.timestamps);
+        if(picture==null) return;
+        long timestamp_afterPictureCreation = System.currentTimeMillis();
+        picture.addTimestamp("beforePictureCreation",timestamp_beforePictureCreation);
+        picture.addTimestamp("afterPictureCreation",timestamp_afterPictureCreation);
         controller.segmentArrived(picture);
     }
 

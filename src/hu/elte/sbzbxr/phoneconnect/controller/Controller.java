@@ -58,7 +58,7 @@ public class Controller {
 
     public void showPicture(Picture picture){
         if(frameScreenShare==null) return;
-        frameScreenShare.showPicture(picture.getImg());
+        frameScreenShare.showPicture(picture);
     }
 
     public void segmentArrived(Picture picture) {
@@ -113,14 +113,8 @@ public class Controller {
     }
 
     public void disconnected(){
-        switch (currentState){
-            case WELCOME_DISCONNECTED -> {return;}
-            case WELCOME_CONNECTED, STREAM_RUNNING -> {
-                disposeAll();
-                frameNotConnected = new Frame_NotConnected(this, model.getServerAddress());
-            }
-        }
-
+        disposeAll();
+        frameNotConnected = new Frame_NotConnected(this, model.getServerAddress());
         currentState = ControllerState.WELCOME_DISCONNECTED;
     }
 

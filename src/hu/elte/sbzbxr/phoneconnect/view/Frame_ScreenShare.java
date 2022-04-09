@@ -2,6 +2,7 @@ package hu.elte.sbzbxr.phoneconnect.view;
 
 
 import hu.elte.sbzbxr.phoneconnect.controller.Controller;
+import hu.elte.sbzbxr.phoneconnect.model.Picture;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -88,29 +89,26 @@ public class Frame_ScreenShare extends JFrame {
         }
     }
 
+    public void showPicture(Picture img) {
+        canvas.showImage(img);
+        long timestamp_afterCanvasShow = System.currentTimeMillis();
+        img.addTimestamp("afterCanvasShow", timestamp_afterCanvasShow);
+        System.out.println(img);
+    }
+
+
     public void showPicture(BufferedImage img){
         canvas.showImage(img);
-        /*
-        img=ImageCanvas.resizeImage(img,canvas.getWidth(),canvas.getHeight());
-        Graphics graphics = canvas.getGraphics();
-        if (graphics != null) {
-            graphics.drawImage(img,0,0,null);
-            graphics.dispose();
-        }*/
     }
 
     public void showPictureFromFile(String path){
-        System.out.println("showPicture called");
+        System.out.println("showPictureFromFile called");
         try {
             BufferedImage img = ImageIO.read(new File(path));
             showPicture(img);
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void initVideoPlayer() {
-        showPictureFromFile("C:\\Users\\Gabor\\egyetem\\5felev_20_21_osz\\szakdoga\\vidik\\jpgStream_sample\\PhoneC_24_Jan_2022_11_49_06__part24.jpg");//todo change it
     }
 
     public void updateMetrics(String currentMetric, String overallMetrics){
