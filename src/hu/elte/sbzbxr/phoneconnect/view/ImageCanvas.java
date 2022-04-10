@@ -61,6 +61,15 @@ public class ImageCanvas extends JComponent {
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D graphics = (Graphics2D) g;
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+        graphics.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        graphics.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE);
+        graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_NORMALIZE);
+        graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
         graphics.drawImage(currentImage.get(),0,0,null);
         Toolkit.getDefaultToolkit().sync();
@@ -76,7 +85,7 @@ public class ImageCanvas extends JComponent {
         AffineTransform at = new AffineTransform();
         at.scale(ration, ration);
         AffineTransformOp scaleOp =
-                new AffineTransformOp(at, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);//Adjust to other than bilinear
+                new AffineTransformOp(at, AffineTransformOp.TYPE_BICUBIC);//Adjust to other than bilinear
         after = scaleOp.filter(before, after);
         return after;
     }
@@ -86,9 +95,13 @@ public class ImageCanvas extends JComponent {
         int h = img.getHeight();
         BufferedImage dimg = new BufferedImage(newW, newH, img.getType());
         Graphics2D g = dimg.createGraphics();
-        //g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
         g.drawImage(img, 0, 0, newW, newH, 0, 0, w, h, null);
         g.dispose();
         return dimg;
+    }
+
+    public AtomicReference<BufferedImage> getCurrentImage() {
+        return currentImage;
     }
 }

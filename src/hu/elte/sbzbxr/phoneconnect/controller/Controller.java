@@ -62,8 +62,9 @@ public class Controller {
     }
 
     public void segmentArrived(Picture picture) {
+        if(frameScreenShare==null) return;
         pictureProvider.pictureArrived(picture);
-        streamMetrics.arrivedPicture(picture.getName());
+        streamMetrics.arrivedPicture(picture.getFilename());
         frameScreenShare.updateMetrics(streamMetrics.getCurrentMetrics(),streamMetrics.getOverallMetrics());
     }
 

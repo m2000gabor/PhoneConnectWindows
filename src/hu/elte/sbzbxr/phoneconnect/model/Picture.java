@@ -9,19 +9,21 @@ import java.util.AbstractMap;
 import java.util.LinkedList;
 
 public class Picture {
-    private final String name;
+    private final String filename;
+    private final String folderName;
     private BufferedImage img;
     public final LinkedList<AbstractMap.SimpleEntry<String,String>> timestamps = new LinkedList<>();
 
-    private Picture(String name, BufferedImage img,LinkedList<AbstractMap.SimpleEntry<String,String>> t) {
-        this.name = name;
+    private Picture(String filename, String folderName, BufferedImage img, LinkedList<AbstractMap.SimpleEntry<String, String>> t) {
+        this.filename = filename;
         this.img = img;
+        this.folderName = folderName;
         this.timestamps.addAll(t);
     }
 
-    public static Picture create(String name, byte[] data, LinkedList<AbstractMap.SimpleEntry<String,String>> t){
+    public static Picture create(String filename, String folderName, byte[] data, LinkedList<AbstractMap.SimpleEntry<String,String>> timestamps){
         try{
-            return new Picture(name,ImageIO.read(new ByteArrayInputStream(data)), t);
+            return new Picture(filename, folderName, ImageIO.read(new ByteArrayInputStream(data)), timestamps);
         }catch (IOException e){
             e.printStackTrace();
             System.err.println("Cannot create picture from this byte array");
@@ -29,8 +31,8 @@ public class Picture {
         return null;
     }
 
-    public String getName() {
-        return name;
+    public String getFilename() {
+        return filename;
     }
 
     public BufferedImage getImg() {
@@ -57,7 +59,7 @@ public class Picture {
     @Override
     public String toString() {
         return "Picture{" +
-                "name='" + name + '\'' +
+                "name='" + filename + '\'' +
                 ", img=" + img +
                 ", timestamps=\n" + getMapAsString(timestamps) +
                 '}';
@@ -69,5 +71,9 @@ public class Picture {
             sb.append("key=").append(item.getKey()).append("; value=").append(item.getValue()).append("\n");
         });
         return sb.toString();
+    }
+
+    public String getFolderName() {
+        return folderName;
     }
 }

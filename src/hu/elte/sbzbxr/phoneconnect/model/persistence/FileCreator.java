@@ -4,6 +4,8 @@ import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.BackupFileFrame
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.FileFrame;
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.SegmentFrame;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidParameterException;
@@ -32,6 +34,18 @@ public class FileCreator {
         try (FileOutputStream outputStream = fileSystemManager.createFile_SegmentSave(onGoingSegmentSaving, frame.filename)){
             outputStream.write(frame.getData());
             System.out.println("Saved segment: " + frame.filename);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public void saveBufferedImage(BufferedImage toSave, String filename,String folderName){
+        if(!Objects.equals(onGoingSegmentSaving, folderName) || !Objects.equals(folderName, onGoingSegmentSaving)){
+            onGoingSegmentSaving = fileSystemManager.createSegmentDirectory(folderName).getName();
+        }
+        try (FileOutputStream outputStream = fileSystemManager.createFile_SegmentSave(onGoingSegmentSaving, filename)){
+            ImageIO.write(toSave, "png", outputStream);
+            System.out.println("Saved image: " + filename);
         }catch (IOException e){
             e.printStackTrace();
         }

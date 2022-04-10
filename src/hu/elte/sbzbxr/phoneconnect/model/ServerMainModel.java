@@ -126,7 +126,7 @@ public class ServerMainModel
     private void reactToSegmentArrivedRequest(SegmentFrame segment) {
         if(SAVE_TO_FILE){saveSegmentToFile(segment);}
         long timestamp_beforePictureCreation = System.currentTimeMillis();
-        Picture picture=Picture.create(segment.filename, segment.getData(),segment.timestamps);
+        Picture picture=Picture.create(segment.filename, segment.folderName, segment.getData(),segment.timestamps);
         if(picture==null) return;
         long timestamp_afterPictureCreation = System.currentTimeMillis();
         picture.addTimestamp("beforePictureCreation",timestamp_beforePictureCreation);
