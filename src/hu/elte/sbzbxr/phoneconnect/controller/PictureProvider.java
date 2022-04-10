@@ -1,5 +1,6 @@
 package hu.elte.sbzbxr.phoneconnect.controller;
 
+import hu.elte.sbzbxr.phoneconnect.Main;
 import hu.elte.sbzbxr.phoneconnect.model.Picture;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -8,7 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PictureProvider {
-    private final ArrayBlockingQueue<Picture> arrived = new ArrayBlockingQueue<Picture>(3);
+    private final ArrayBlockingQueue<Picture> arrived = new ArrayBlockingQueue<>(3);
     private final PictureFunctional callback;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
@@ -42,6 +43,9 @@ public class PictureProvider {
         pic.addTimestamp("pictureInserted",timestamp_pictureInserted);
         if(!arrived.offer(pic)){
             System.err.println("Too much segment arrived, one is thrown away");
+            if(Main.LOG_SEGMENTS){
+                System.err.println(pic);
+            }
         }
     }
 
