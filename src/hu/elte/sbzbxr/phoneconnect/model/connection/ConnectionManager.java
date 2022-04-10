@@ -2,6 +2,7 @@ package hu.elte.sbzbxr.phoneconnect.model.connection;
 
 import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.*;
 import java.util.Collections;
@@ -26,7 +27,9 @@ public class ConnectionManager {
         {
             // Create an AsynchronousServerSocketChannel that will listen on port 5000
             //System.out.println("getPublicIpAddress() = " + getPublicIpAddress().toString());
-            serverSocket = new ServerSocket(SERVER_PORT,0,getPublicIpAddress());
+            serverSocket = new ServerSocket();
+            serverSocket.setPerformancePreferences(0,2,1);
+            serverSocket.bind(new InetSocketAddress(getPublicIpAddress(), SERVER_PORT),0);
             return getServerAddress();
         }
         catch (IOException e)
@@ -96,7 +99,7 @@ public class ConnectionManager {
                 if(client!=null){client.close();}
                 System.out.println("Waiting for connection");
                     client = serverSocket.accept();
-                    serverMainModel.connectionEstablished(client.getInputStream());
+                    serverMainModel.connectionEstablished(new BufferedInputStream(client.getInputStream()));
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -9,6 +9,7 @@ import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.*;
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.message.*;
 import hu.elte.sbzbxr.phoneconnect.model.persistence.FileCreator;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +39,7 @@ public class ServerMainModel
         return address;
     }
 
-    public void connectionEstablished(InputStream i){
+    public void connectionEstablished(BufferedInputStream i){
         controller.connectionEstablished();
         isRunning=true;
         System.out.println("Connection established");
