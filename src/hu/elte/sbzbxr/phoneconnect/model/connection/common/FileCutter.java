@@ -11,7 +11,7 @@ import java.io.InputStream;
 
 //version: 1.6
 public class FileCutter {
-    private static final int FILE_FRAME_MAX_SIZE=32000;//in bytes
+    private static final int FILE_FRAME_MAX_SIZE=320000;//in bytes
     private final InputStream inputStream;
     private final String filename;
     private boolean hadClosingPart =false;
