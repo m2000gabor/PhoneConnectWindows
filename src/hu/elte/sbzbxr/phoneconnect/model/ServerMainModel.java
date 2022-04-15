@@ -39,7 +39,7 @@ public class ServerMainModel
         return address;
     }
 
-    public void connectionEstablished(BufferedInputStream i){
+    public void tcpConnectionEstablished(BufferedInputStream i){
         controller.connectionEstablished();
         isRunning=true;
         System.out.println("Connection established");
@@ -202,5 +202,29 @@ public class ServerMainModel
                 controller.showNotification(new NotificationFrame("Sending failed", "Failed to send the chosen files", null));
             }
         }).start();
+    }
+
+    public void udpConnectionStart() {
+        /*
+        boolean udpRunning = true;
+
+        while (udpRunning) {
+            DatagramPacket packet
+                    = new DatagramPacket(buf, buf.length);
+            socket.receive(packet);
+
+            InetAddress address = packet.getAddress();
+            int port = packet.getPort();
+            packet = new DatagramPacket(buf, buf.length, address, port);
+            String received
+                    = new String(packet.getData(), 0, packet.getLength());
+
+            if (received.equals("end")) {
+                udpRunning = false;
+                continue;
+            }
+            socket.send(packet);
+        }
+        socket.close();*/
     }
 }
