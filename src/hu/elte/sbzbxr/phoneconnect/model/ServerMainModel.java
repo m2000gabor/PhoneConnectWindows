@@ -106,7 +106,7 @@ public class ServerMainModel
         MessageType type = messageFrame.messageType;
         switch (type){
             default -> throw new IllegalArgumentException("Unknown type of internal message");
-            case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream).message);
+            case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream));
             case RESTORE_GET_AVAILABLE -> restoreGetMessageArrived();
             case RESTORE_START_RESTORE -> restoreStartMessageArrived(StartRestoreMessageFrame.deserialize(inputStream));
             case START_OF_STREAM -> controller.startStreaming();
@@ -138,15 +138,15 @@ public class ServerMainModel
         }
     }
 
-    private void pingMessageArrived(String receivedMsg){
-        System.out.println("Received ping message: "+receivedMsg);
-        MessageFrame answerFrame = new PingMessageFrame("Hello client!");
+    private void pingMessageArrived(PingMessageFrame pingFrame){
+        pingFrame.requestArrived();
         try {
-            connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());
+            connectionManager.getOutputStream().write(pingFrame.serialize().getAsBytes());
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Unable to send the answer to the ping request");
         }
+        System.out.println("Received ping message: "+pingFrame.toString());
     }
 
     private void reactToNotificationArrived(NotificationFrame notificationFrame){
