@@ -18,6 +18,7 @@ public class Controller {
     private ControllerState currentState;
     private final ServerMainModel model;
     private final StreamMetrics streamMetrics;
+    private final PictureProvider pictureProvider = new PictureProvider(this::showPicture);
 
     private Frame_NotConnected frameNotConnected;
     private Frame_Connected_NoScreenShare frameConnectedNoScreenShare;
@@ -47,27 +48,23 @@ public class Controller {
         currentState = ControllerState.WELCOME_CONNECTED;
     }
 
-    private PictureProvider pictureProvider;
-    public void startStreaming(Picture picture){
+    public void startStreaming(){
         disposeAll();
         frameScreenShare = new Frame_ScreenShare(model.getServerAddress(),this );
         currentState = ControllerState.STREAM_RUNNING;
 
-        pictureProvider=new PictureProvider();
-        pictureProvider.pictureArrived(picture);
-
-        frameScreenShare.initVideoPlayer();
-        pictureProvider.askNextPicture(this);
+        pictureProvider.start();
     }
 
     public void showPicture(Picture picture){
-        frameScreenShare.showPicture(picture.getImg());
-        pictureProvider.askNextPicture(this);
+        if(frameScreenShare==null) return;
+        frameScreenShare.showPicture(picture);
     }
 
     public void segmentArrived(Picture picture) {
+        if(frameScreenShare==null) return;
         pictureProvider.pictureArrived(picture);
-        streamMetrics.arrivedPicture(picture.getName());
+        streamMetrics.arrivedPicture(picture.getFilename());
         frameScreenShare.updateMetrics(streamMetrics.getCurrentMetrics(),streamMetrics.getOverallMetrics());
     }
 
@@ -89,6 +86,7 @@ public class Controller {
 
     private TrayIcon trayIcon = null;
     public void displayTray(NotificationFrame notification) throws AWTException {
+        if(!SystemTray.isSupported()) return;
         if(trayIcon == null){
             //Obtain only one instance of the SystemTray object
             SystemTray tray = SystemTray.getSystemTray();
@@ -96,11 +94,11 @@ public class Controller {
             Image image = Toolkit.getDefaultToolkit().createImage("resources/icon.jpg");
             //Alternative (if the icon is on the classpath):
             //Image image = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.png"));
-            trayIcon = new TrayIcon(image, "Tray Demo");
+            trayIcon = new TrayIcon(image, "PhoneConnect notification icon");
             //Let the system resize the image if needed
             trayIcon.setImageAutoSize(true);
             //Set tooltip text for the tray icon
-            trayIcon.setToolTip("System tray icon demo");
+            trayIcon.setToolTip("PhoneConnect notification");
             tray.add(trayIcon);
         }
 
@@ -116,14 +114,8 @@ public class Controller {
     }
 
     public void disconnected(){
-        switch (currentState){
-            case WELCOME_DISCONNECTED -> {return;}
-            case WELCOME_CONNECTED, STREAM_RUNNING -> {
-                disposeAll();
-                frameNotConnected = new Frame_NotConnected(this, model.getServerAddress());
-            }
-        }
-
+        disposeAll();
+        frameNotConnected = new Frame_NotConnected(this, model.getServerAddress());
         currentState = ControllerState.WELCOME_DISCONNECTED;
     }
 
@@ -135,6 +127,8 @@ public class Controller {
 
     public void endOfStreaming() {
         disposeAll();
+        pictureProvider.stop();
+        currentState=ControllerState.STREAM_STOPPED;
         frameConnectedNoScreenShare = new Frame_Connected_NoScreenShare(this, model.getServerAddress());
     }
 }

@@ -1,7 +1,7 @@
 package hu.elte.sbzbxr.phoneconnect.model.connection;
 
 public class StreamMetrics {
-    private static final int refreshRate = 2000; //in millis
+    private static final int refreshRate = 5000; //in millis
     private final DroppedFrameMetrics currentMetrics;
     private final DroppedFrameMetrics totalMetrics;
     private long lastTime=0;
@@ -24,7 +24,7 @@ public class StreamMetrics {
     }
 
     public String getCurrentMetrics(){
-        return "Current drop rate: "+lastMetric+"%";
+        return "Current drop rate (\\5s): "+lastMetric+"%";
     }
 
     public String getOverallMetrics(){

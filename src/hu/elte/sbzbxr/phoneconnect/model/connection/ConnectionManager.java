@@ -2,16 +2,16 @@ package hu.elte.sbzbxr.phoneconnect.model.connection;
 
 import hu.elte.sbzbxr.phoneconnect.model.ServerMainModel;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
 
 public class ConnectionManager {
-    private static final int SERVER_PORT = 5000;
+    private static final int TCP_SERVER_PORT = 5000;
+    private static final int UDP_SERVER_PORT = 4445;
 
-    private ServerSocket serverSocket;
+    private ServerSocket tcpServerSocket;
     private ServerMainModel serverMainModel;
     private Socket client;
 
@@ -26,7 +26,9 @@ public class ConnectionManager {
         {
             // Create an AsynchronousServerSocketChannel that will listen on port 5000
             //System.out.println("getPublicIpAddress() = " + getPublicIpAddress().toString());
-            serverSocket = new ServerSocket(SERVER_PORT,0,getPublicIpAddress());
+            tcpServerSocket = new ServerSocket();
+            tcpServerSocket.setPerformancePreferences(0,2,1);
+            tcpServerSocket.bind(new InetSocketAddress(getPublicIpAddress(), TCP_SERVER_PORT),0);
             return getServerAddress();
         }
         catch (IOException e)
@@ -38,6 +40,18 @@ public class ConnectionManager {
 
 
     private InetAddress getPublicIpAddress(){
+        try(final DatagramSocket socket = new DatagramSocket()){
+            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+            String ip = socket.getLocalAddress().getHostAddress();
+            System.out.println("ip: " + ip);
+            return InetAddress.getByName(ip);//todo might remove this
+        } catch (UncheckedIOException e){
+            System.err.println("No internet connection available");
+            return null;
+        }catch (SocketException | UnknownHostException e) {
+            e.printStackTrace();
+            return null;
+        }
 /*
         try {
             InetAddress a =InetAddress.getLocalHost();
@@ -50,15 +64,6 @@ public class ConnectionManager {
             String localHost = InetAddress.getLocalHost().getHostAddress();
             System.out.println("LocalHost"+localHost);
         } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-*/
-        try(final DatagramSocket socket = new DatagramSocket()){
-            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-            String ip = socket.getLocalAddress().getHostAddress();
-            System.out.println("ip: " + ip);
-            return InetAddress.getByName(ip);//todo might remove this
-        } catch (SocketException | UnknownHostException e) {
             e.printStackTrace();
         }
 
@@ -79,15 +84,26 @@ public class ConnectionManager {
         }
 
 
-        return null;
+        return null;*/
     }
 
-    public SocketAddress getServerAddress() throws IOException {return serverSocket.getLocalSocketAddress();}
+    public SocketAddress getServerAddress() throws IOException {return tcpServerSocket.getLocalSocketAddress();}
 
     public void startServer(ServerMainModel owner){
         serverMainModel = owner;
         // Listen for a new request
         restartServer();
+        startUdpServer();
+    }
+
+    private void startUdpServer() {
+        new Thread(()->{
+            try {
+                serverMainModel.udpConnectionStart(new DatagramSocket(UDP_SERVER_PORT));
+            } catch (SocketException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     public void restartServer(){
@@ -95,8 +111,8 @@ public class ConnectionManager {
             try {
                 if(client!=null){client.close();}
                 System.out.println("Waiting for connection");
-                    client = serverSocket.accept();
-                    serverMainModel.connectionEstablished(client.getInputStream());
+                client = tcpServerSocket.accept();
+                serverMainModel.tcpConnectionEstablished(new BufferedInputStream(client.getInputStream()));
             } catch (IOException e) {
                 e.printStackTrace();
             }

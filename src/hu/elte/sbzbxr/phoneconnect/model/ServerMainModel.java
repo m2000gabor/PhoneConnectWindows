@@ -7,15 +7,20 @@ import hu.elte.sbzbxr.phoneconnect.model.connection.SafeOutputStream;
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.FileCutter;
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.*;
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.message.*;
+import hu.elte.sbzbxr.phoneconnect.model.connection.udp.SegmentFramePartBuffer;
+import hu.elte.sbzbxr.phoneconnect.model.connection.udp.UdpReader;
 import hu.elte.sbzbxr.phoneconnect.model.persistence.FileCreator;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ServerMainModel
 {
@@ -23,8 +28,8 @@ public class ServerMainModel
     private final FileCreator fileCreator = new FileCreator();
     private Controller controller;
     private ConnectionManager connectionManager;
-    boolean isRunning=false;
-    boolean isStreaming=false;
+    AtomicBoolean isTcpRunning = new AtomicBoolean(false);
+    AtomicBoolean isUdpRunning = new AtomicBoolean(false);
 
     public ServerMainModel() {connectionManager=new ConnectionManager();}
 
@@ -38,17 +43,24 @@ public class ServerMainModel
         return address;
     }
 
-    public void connectionEstablished(InputStream i){
+    public void tcpConnectionEstablished(BufferedInputStream i){
         controller.connectionEstablished();
-        isRunning=true;
+        isTcpRunning.set(true);
         System.out.println("Connection established");
-        while (isRunning) {
+        while (isTcpRunning.get()) {
             try {
                 FrameType type = NetworkFrameCreator.getType(i);
                 //System.out.println("Frame arrived with type: " + type);
                 switch (type) {
                     case INTERNAL_MESSAGE -> reactToInternalMessage(i);
-                    case SEGMENT -> reactToSegmentArrivedRequest(SegmentFrame.deserialize(type,i));
+                    case SEGMENT -> {
+                        long timestamp_beforeDeserialization = System.currentTimeMillis();
+                        SegmentFrame segmentFrame = SegmentFrame.deserialize(type,i);
+                        long timestamp_afterDeserialization = System.currentTimeMillis();
+                        segmentFrame.addTimestamp("beforeDeserialization",timestamp_beforeDeserialization);
+                        segmentFrame.addTimestamp("afterDeserialization",timestamp_afterDeserialization);
+                        reactToSegmentArrivedRequest(segmentFrame);
+                    }
                     case NOTIFICATION -> reactToNotificationArrived(NotificationFrame.deserialize(i));
                     case FILE -> reactToIncomingFileTransfer(FileFrame.deserialize(type,i));
                     case BACKUP_FILE -> reactToIncomingBackup(BackupFileFrame.deserialize(type,i));
@@ -56,12 +68,37 @@ public class ServerMainModel
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                stopConnection();
-                controller.disconnected();
-                connectionManager.restartServer();
                 break;
             }
         }
+        stopConnection();
+        controller.disconnected();
+        connectionManager.restartServer();
+    }
+
+    public void udpConnectionStart(DatagramSocket socket) {
+        SegmentFramePartBuffer buffer = new SegmentFramePartBuffer();
+        isUdpRunning.set(true);
+        while (isUdpRunning.get()) {
+            try {
+                UdpSegmentFramePart part = UdpReader.readSegmentFramePart(socket);
+                buffer.add(part);
+            }catch (IOException exception){
+                continue;
+            }
+
+            for(SegmentFrame segmentFrame : buffer.getFinished()){
+                reactToSegmentArrivedRequest(segmentFrame);
+            }
+        }
+        socket.close();
+        isUdpRunning.set(false);
+    }
+
+    public void stopConnection(){
+        isTcpRunning.set(false);
+        controller.endOfStreaming();
+        fileCreator.connectionStopped();
     }
 
     private void reactToInternalMessage(InputStream inputStream) throws IOException {
@@ -69,9 +106,10 @@ public class ServerMainModel
         MessageType type = messageFrame.messageType;
         switch (type){
             default -> throw new IllegalArgumentException("Unknown type of internal message");
-            case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream).message);
+            case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream));
             case RESTORE_GET_AVAILABLE -> restoreGetMessageArrived();
             case RESTORE_START_RESTORE -> restoreStartMessageArrived(StartRestoreMessageFrame.deserialize(inputStream));
+            case START_OF_STREAM -> controller.startStreaming();
             case END_OF_STREAM -> controller.endOfStreaming();
         }
 
@@ -100,15 +138,15 @@ public class ServerMainModel
         }
     }
 
-    private void pingMessageArrived(String receivedMsg){
-        System.out.println("Received ping message: "+receivedMsg);
-        MessageFrame answerFrame = new PingMessageFrame("Hello client!");
+    private void pingMessageArrived(PingMessageFrame pingFrame){
+        pingFrame.requestArrived();
         try {
-            connectionManager.getOutputStream().write(answerFrame.serialize().getAsBytes());
+            connectionManager.getOutputStream().write(pingFrame.serialize().getAsBytes());
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Unable to send the answer to the ping request");
         }
+        System.out.println("Received ping message: "+pingFrame.toString());
     }
 
     private void reactToNotificationArrived(NotificationFrame notificationFrame){
@@ -117,11 +155,12 @@ public class ServerMainModel
 
     private void reactToSegmentArrivedRequest(SegmentFrame segment) {
         if(SAVE_TO_FILE){saveSegmentToFile(segment);}
-        Picture picture=Picture.create(segment.filename, segment.getData());
-        if(!isStreaming){
-            controller.startStreaming(picture);
-            isStreaming=true;// If this is the first segment, start the streaming
-        }
+        long timestamp_beforePictureCreation = System.currentTimeMillis();
+        Picture picture=Picture.create(segment.filename, segment.folderName, segment.getData(),segment.timestamps);
+        if(picture==null) return;
+        long timestamp_afterPictureCreation = System.currentTimeMillis();
+        picture.addTimestamp("beforePictureCreation",timestamp_beforePictureCreation);
+        picture.addTimestamp("afterPictureCreation",timestamp_afterPictureCreation);
         controller.segmentArrived(picture);
     }
 
@@ -136,12 +175,6 @@ public class ServerMainModel
 
     private void saveSegmentToFile(SegmentFrame frame){
         fileCreator.saveSegment(frame);
-    }
-
-    public void stopConnection(){
-        isRunning=false;
-        isStreaming=false;
-        fileCreator.connectionStopped();
     }
 
     public void setController(Controller controller) {
@@ -159,11 +192,14 @@ public class ServerMainModel
     public void sendFiles(List<File> files, FrameType type, String backupID, Long folderSize){
         if(files == null) return;
         new Thread(()->{
+            AtomicBoolean errorOccurred= new AtomicBoolean(false);
             files.forEach(file -> {
                 FileCutter fileCutter = FileCutterCreator.create(file,type,backupID,folderSize);
                 System.out.println("Sending file: "+file.getName());
                 SafeOutputStream outputStream = connectionManager.getOutputStream();
-                if(outputStream==null){System.err.println("You need to connect first!"); return;}
+                if(outputStream==null){System.err.println("You need to connect first!");
+                    errorOccurred.set(true);
+                    return;}
 
                 while(!fileCutter.isEnd()){
                     try {
@@ -172,12 +208,23 @@ public class ServerMainModel
                         fileCutter.next();
                     } catch (IOException e) {
                         e.printStackTrace();
+                        errorOccurred.set(true);
                         break;
                     }
                 }
-                System.out.println("File sent");
+                if(!errorOccurred.get()){
+                    System.out.println("File sent");
+                }else{
+                    System.err.println("Error occurred, file not sent");
+                }
+
             });
-            controller.showNotification(new NotificationFrame("Sending completed", "Successfully sent the chosen files", null));
+            if(!errorOccurred.get()){
+                controller.showNotification(new NotificationFrame("Sending completed", "Successfully sent the chosen files", null));
+            }else{
+                controller.showNotification(new NotificationFrame("Sending failed", "Failed to send the chosen files", null));
+            }
         }).start();
     }
+
 }

@@ -2,6 +2,8 @@ package hu.elte.sbzbxr.phoneconnect.view;
 
 
 import hu.elte.sbzbxr.phoneconnect.controller.Controller;
+import hu.elte.sbzbxr.phoneconnect.model.Picture;
+import hu.elte.sbzbxr.phoneconnect.model.persistence.FileCreator;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -12,6 +14,8 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Objects;
 
+import static hu.elte.sbzbxr.phoneconnect.Main.LOG_SEGMENTS;
+import static hu.elte.sbzbxr.phoneconnect.Main.SAVE_RESIZED_IMG;
 import static hu.elte.sbzbxr.phoneconnect.view.Frame_Connected_NoScreenShare.setupDragAndDropSupport;
 
 public class Frame_ScreenShare extends JFrame {
@@ -88,19 +92,27 @@ public class Frame_ScreenShare extends JFrame {
         }
     }
 
+    private final FileCreator fileCreator = new FileCreator();
+    public void showPicture(Picture img) {
+        canvas.showImage(img);
+        long timestamp_afterCanvasShow = System.currentTimeMillis();
+        img.addTimestamp("afterCanvasShow", timestamp_afterCanvasShow);
+        if(LOG_SEGMENTS) System.out.println(img);
+        if(SAVE_RESIZED_IMG){
+            //BufferedImage image = ImageCanvas.getScaledBufferedImage(img.getImg(),canvas.getWidth(),canvas.getHeight());
+            BufferedImage image = canvas.getCurrentImage().get();
+            if(image == null) return;
+            fileCreator.saveBufferedImage(image, img.getFilename(),img.getFolderName());
+        }
+    }
+
+
     public void showPicture(BufferedImage img){
         canvas.showImage(img);
-        /*
-        img=ImageCanvas.resizeImage(img,canvas.getWidth(),canvas.getHeight());
-        Graphics graphics = canvas.getGraphics();
-        if (graphics != null) {
-            graphics.drawImage(img,0,0,null);
-            graphics.dispose();
-        }*/
     }
 
     public void showPictureFromFile(String path){
-        System.out.println("showPicture called");
+        System.out.println("showPictureFromFile called");
         try {
             BufferedImage img = ImageIO.read(new File(path));
             showPicture(img);
@@ -109,11 +121,8 @@ public class Frame_ScreenShare extends JFrame {
         }
     }
 
-    public void initVideoPlayer() {
-        showPictureFromFile("C:\\Users\\Gabor\\egyetem\\5felev_20_21_osz\\szakdoga\\vidik\\jpgStream_sample\\PhoneC_24_Jan_2022_11_49_06__part24.jpg");//todo change it
-    }
-
-    public void updateMetrics(String currentMetric, String overallMetrics){
+    public void updateMetrics(String currentMetric, String
+            overallMetrics){
         metricsLabel.setText(currentMetric +" \t"+overallMetrics);
     }
 }
