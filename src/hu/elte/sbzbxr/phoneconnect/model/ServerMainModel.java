@@ -28,7 +28,8 @@ public class ServerMainModel
     private final FileCreator fileCreator = new FileCreator();
     private Controller controller;
     private ConnectionManager connectionManager;
-    boolean isRunning=false;
+    AtomicBoolean isTcpRunning = new AtomicBoolean(false);
+    AtomicBoolean isUdpRunning = new AtomicBoolean(false);
 
     public ServerMainModel() {connectionManager=new ConnectionManager();}
 
@@ -44,9 +45,9 @@ public class ServerMainModel
 
     public void tcpConnectionEstablished(BufferedInputStream i){
         controller.connectionEstablished();
-        isRunning=true;
+        isTcpRunning.set(true);
         System.out.println("Connection established");
-        while (isRunning) {
+        while (isTcpRunning.get()) {
             try {
                 FrameType type = NetworkFrameCreator.getType(i);
                 //System.out.println("Frame arrived with type: " + type);
@@ -67,12 +68,37 @@ public class ServerMainModel
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                stopConnection();
-                controller.disconnected();
-                connectionManager.restartServer();
                 break;
             }
         }
+        stopConnection();
+        controller.disconnected();
+        connectionManager.restartServer();
+    }
+
+    public void udpConnectionStart(DatagramSocket socket) {
+        SegmentFramePartBuffer buffer = new SegmentFramePartBuffer();
+        isUdpRunning.set(true);
+        while (isUdpRunning.get()) {
+            try {
+                UdpSegmentFramePart part = UdpReader.readSegmentFramePart(socket);
+                buffer.add(part);
+            }catch (IOException exception){
+                continue;
+            }
+
+            for(SegmentFrame segmentFrame : buffer.getFinished()){
+                reactToSegmentArrivedRequest(segmentFrame);
+            }
+        }
+        socket.close();
+        isUdpRunning.set(false);
+    }
+
+    public void stopConnection(){
+        isTcpRunning.set(false);
+        controller.endOfStreaming();
+        fileCreator.connectionStopped();
     }
 
     private void reactToInternalMessage(InputStream inputStream) throws IOException {
@@ -151,12 +177,6 @@ public class ServerMainModel
         fileCreator.saveSegment(frame);
     }
 
-    public void stopConnection(){
-        isRunning=false;
-        controller.endOfStreaming();
-        fileCreator.connectionStopped();
-    }
-
     public void setController(Controller controller) {
         this.controller = controller;
     }
@@ -207,21 +227,4 @@ public class ServerMainModel
         }).start();
     }
 
-    public void udpConnectionStart(DatagramSocket socket) {
-        SegmentFramePartBuffer buffer = new SegmentFramePartBuffer();
-        isRunning=true;
-        while (isRunning) {
-            try {
-                UdpSegmentFramePart part = UdpReader.readSegmentFramePart(socket);
-                buffer.add(part);
-            }catch (IOException exception){
-                continue;
-            }
-
-            for(SegmentFrame segmentFrame : buffer.getFinished()){
-                reactToSegmentArrivedRequest(segmentFrame);
-            }
-        }
-        socket.close();
-    }
 }

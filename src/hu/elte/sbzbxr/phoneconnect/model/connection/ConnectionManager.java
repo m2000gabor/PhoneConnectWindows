@@ -15,9 +15,6 @@ public class ConnectionManager {
     private ServerMainModel serverMainModel;
     private Socket client;
 
-    private DatagramSocket udpSocket;
-
-
     public ConnectionManager(){}
 
     /**
@@ -27,7 +24,6 @@ public class ConnectionManager {
     public SocketAddress init(){
         try
         {
-            udpSocket = new DatagramSocket(UDP_SERVER_PORT);
             // Create an AsynchronousServerSocketChannel that will listen on port 5000
             //System.out.println("getPublicIpAddress() = " + getPublicIpAddress().toString());
             tcpServerSocket = new ServerSocket();
@@ -97,6 +93,17 @@ public class ConnectionManager {
         serverMainModel = owner;
         // Listen for a new request
         restartServer();
+        startUdpServer();
+    }
+
+    private void startUdpServer() {
+        new Thread(()->{
+            try {
+                serverMainModel.udpConnectionStart(new DatagramSocket(UDP_SERVER_PORT));
+            } catch (SocketException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     public void restartServer(){
@@ -109,10 +116,6 @@ public class ConnectionManager {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }).start();
-
-        new Thread(()->{
-            serverMainModel.udpConnectionStart(udpSocket);
         }).start();
     }
 

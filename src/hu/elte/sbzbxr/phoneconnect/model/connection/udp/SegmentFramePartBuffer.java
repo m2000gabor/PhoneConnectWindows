@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class SegmentFramePartBuffer {
-    public static final int WAIT_TILL_FINISHED = 30;
+    public static final int WAIT_TILL_FINISHED = 10;
     private final Map<Long,List<UdpSegmentFramePart>> partMap = new HashMap<>();
     private final Map<Long, AtomicInteger> counterMap = new HashMap<>();
     private final Set<Long> finished = new HashSet<>(4);
