@@ -8,11 +8,15 @@ import java.io.UncheckedIOException;
 import java.net.*;
 
 public class ConnectionManager {
-    private static final int SERVER_PORT = 5000;
+    private static final int TCP_SERVER_PORT = 5000;
+    private static final int UDP_SERVER_PORT = 4445;
 
     private ServerSocket tcpServerSocket;
     private ServerMainModel serverMainModel;
     private Socket client;
+
+    private DatagramSocket udpSocket;
+
 
     public ConnectionManager(){}
 
@@ -23,11 +27,12 @@ public class ConnectionManager {
     public SocketAddress init(){
         try
         {
+            udpSocket = new DatagramSocket(UDP_SERVER_PORT);
             // Create an AsynchronousServerSocketChannel that will listen on port 5000
             //System.out.println("getPublicIpAddress() = " + getPublicIpAddress().toString());
             tcpServerSocket = new ServerSocket();
             tcpServerSocket.setPerformancePreferences(0,2,1);
-            tcpServerSocket.bind(new InetSocketAddress(getPublicIpAddress(), SERVER_PORT),0);
+            tcpServerSocket.bind(new InetSocketAddress(getPublicIpAddress(), TCP_SERVER_PORT),0);
             return getServerAddress();
         }
         catch (IOException e)
@@ -107,7 +112,7 @@ public class ConnectionManager {
         }).start();
 
         new Thread(()->{
-            serverMainModel.udpConnectionStart();
+            serverMainModel.udpConnectionStart(udpSocket);
         }).start();
     }
 

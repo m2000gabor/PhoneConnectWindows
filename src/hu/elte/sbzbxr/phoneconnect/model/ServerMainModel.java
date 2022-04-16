@@ -7,12 +7,15 @@ import hu.elte.sbzbxr.phoneconnect.model.connection.SafeOutputStream;
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.FileCutter;
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.*;
 import hu.elte.sbzbxr.phoneconnect.model.connection.common.items.message.*;
+import hu.elte.sbzbxr.phoneconnect.model.connection.udp.SegmentFramePartBuffer;
+import hu.elte.sbzbxr.phoneconnect.model.connection.udp.UdpReader;
 import hu.elte.sbzbxr.phoneconnect.model.persistence.FileCreator;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -204,27 +207,21 @@ public class ServerMainModel
         }).start();
     }
 
-    public void udpConnectionStart() {
-        /*
-        boolean udpRunning = true;
-
-        while (udpRunning) {
-            DatagramPacket packet
-                    = new DatagramPacket(buf, buf.length);
-            socket.receive(packet);
-
-            InetAddress address = packet.getAddress();
-            int port = packet.getPort();
-            packet = new DatagramPacket(buf, buf.length, address, port);
-            String received
-                    = new String(packet.getData(), 0, packet.getLength());
-
-            if (received.equals("end")) {
-                udpRunning = false;
+    public void udpConnectionStart(DatagramSocket socket) {
+        SegmentFramePartBuffer buffer = new SegmentFramePartBuffer();
+        isRunning=true;
+        while (isRunning) {
+            try {
+                UdpSegmentFramePart part = UdpReader.readSegmentFramePart(socket);
+                buffer.add(part);
+            }catch (IOException exception){
                 continue;
             }
-            socket.send(packet);
+
+            for(SegmentFrame segmentFrame : buffer.getFinished()){
+                reactToSegmentArrivedRequest(segmentFrame);
+            }
         }
-        socket.close();*/
+        socket.close();
     }
 }
