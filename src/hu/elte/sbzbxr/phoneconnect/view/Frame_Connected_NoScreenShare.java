@@ -11,6 +11,8 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
 import java.net.SocketAddress;
 
+import static hu.elte.sbzbxr.phoneconnect.Main.setFancyLookAndFeel;
+
 public class Frame_Connected_NoScreenShare extends JFrame {
     private final Controller controller;
     JPanel northPanel;
@@ -20,7 +22,7 @@ public class Frame_Connected_NoScreenShare extends JFrame {
 
     public Frame_Connected_NoScreenShare(Controller controller, SocketAddress serverAddress){
         this.controller=controller;
-        setFancyLookAndFeel();
+        setFancyLookAndFeel(this);
 
         //window
         setLayout(new BorderLayout());
@@ -69,15 +71,6 @@ public class Frame_Connected_NoScreenShare extends JFrame {
                 }
             }
         });
-    }
-
-    private void setFancyLookAndFeel() {
-        try
-        {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            System.err.println("No look and feel");
-        }
     }
 
     private static String getIpAddress(SocketAddress serverAddress){

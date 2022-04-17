@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.SocketAddress;
 
+import static hu.elte.sbzbxr.phoneconnect.Main.setFancyLookAndFeel;
 import static hu.elte.sbzbxr.phoneconnect.view.MenuInflater.inflateMenu;
 
 public class Frame_NotConnected extends JFrame {
@@ -19,7 +20,7 @@ public class Frame_NotConnected extends JFrame {
 
     public Frame_NotConnected(Controller controller,SocketAddress serverAddress){
         this.controller=controller;
-        setFancyLookAndFeel();
+        setFancyLookAndFeel(this);
 
         //window
         setLayout(new BorderLayout());
@@ -59,14 +60,6 @@ public class Frame_NotConnected extends JFrame {
         canvas.showImage(QrGenerator.getQr(str));
     }
 
-    private void setFancyLookAndFeel() {
-        try
-        {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            System.err.println("No look and feel");
-        }
-    }
 
     private static String getIpAddress(SocketAddress serverAddress){
         if(serverAddress==null){

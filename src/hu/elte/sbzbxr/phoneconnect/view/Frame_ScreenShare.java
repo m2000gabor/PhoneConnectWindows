@@ -14,8 +14,7 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Objects;
 
-import static hu.elte.sbzbxr.phoneconnect.Main.LOG_SEGMENTS;
-import static hu.elte.sbzbxr.phoneconnect.Main.SAVE_RESIZED_IMG;
+import static hu.elte.sbzbxr.phoneconnect.Main.*;
 import static hu.elte.sbzbxr.phoneconnect.view.Frame_Connected_NoScreenShare.setupDragAndDropSupport;
 
 public class Frame_ScreenShare extends JFrame {
@@ -31,7 +30,7 @@ public class Frame_ScreenShare extends JFrame {
 
     public Frame_ScreenShare(SocketAddress serverAddress, Controller controller){
         this.controller = controller;
-        setFancyLookAndFeel();
+        setFancyLookAndFeel(this);
 
         //window
         setLayout(new BorderLayout());
@@ -81,15 +80,6 @@ public class Frame_ScreenShare extends JFrame {
         setupDragAndDropSupport(this, this.controller);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
-    }
-
-    private void setFancyLookAndFeel() {
-        try
-        {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            System.err.println("No look and feel");
-        }
     }
 
     private final FileCreator fileCreator = new FileCreator();
