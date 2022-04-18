@@ -23,7 +23,7 @@ public class Main {
             System.err.println("No look and feel");
         }
         try{
-            frame.setIconImage(new javax.swing.ImageIcon(Objects.requireNonNull(frame.getClass().getResource("/icon.jpg"))).getImage());
+            frame.setIconImage(new javax.swing.ImageIcon(Objects.requireNonNull(frame.getClass().getResource("/icon.png"))).getImage());
         }catch (NullPointerException e){
             System.err.println("Cannot set image to app icon");
         }

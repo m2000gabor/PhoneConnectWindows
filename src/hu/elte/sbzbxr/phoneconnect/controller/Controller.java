@@ -91,7 +91,7 @@ public class Controller {
             //Obtain only one instance of the SystemTray object
             SystemTray tray = SystemTray.getSystemTray();
             //If the icon is a file
-            Image image = Toolkit.getDefaultToolkit().createImage("resources/icon.jpg");
+            Image image = Toolkit.getDefaultToolkit().createImage("resources/icon.png");
             //Alternative (if the icon is on the classpath):
             //Image image = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.png"));
             trayIcon = new TrayIcon(image, "PhoneConnect notification icon");
