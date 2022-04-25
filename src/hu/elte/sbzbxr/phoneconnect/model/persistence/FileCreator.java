@@ -69,7 +69,12 @@ public class FileCreator {
                     fileTransferStream.write(frame.getData());
                 }
             } else {//other file transfer is in progress
-                throw new InvalidParameterException("Another file transfer is in progress. (" + onGoingFileSaving + ")");
+                //throw new InvalidParameterException("Another file transfer is in progress. (" + onGoingFileSaving + ")");
+                System.err.println("Another file transfer was in progress. (" + onGoingFileSaving + ") It's stopped.");
+                onGoingFileSaving = null;
+                fileTransferStream.close();
+                fileTransferStream = null;
+                saveFileFrame(frame,notificationCallback);
             }
         } catch (IOException | InvalidParameterException e) {
             e.printStackTrace();
