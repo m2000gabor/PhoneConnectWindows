@@ -115,6 +115,7 @@ public class Controller {
 
     public void disconnected(){
         disposeAll();
+        System.err.println("Disconnected");
         frameNotConnected = new Frame_NotConnected(this, model.getServerAddress());
         currentState = ControllerState.WELCOME_DISCONNECTED;
     }
@@ -126,6 +127,7 @@ public class Controller {
     }
 
     public void endOfStreaming() {
+        System.err.println("End of streaming");
         disposeAll();
         pictureProvider.stop();
         currentState=ControllerState.STREAM_STOPPED;

@@ -34,7 +34,7 @@ public class SegmentFramePartBuffer {
         }
     }
 
-    public List<SegmentFrame> getFinished(){
+    public List<SegmentFrame> pullFinished(){
         List<SegmentFrame> ret = new ArrayList<>(4);
         for(Long id : finished.stream().sorted().collect(Collectors.toList())){
             List<UdpSegmentFramePart> parts = partMap.remove(id);

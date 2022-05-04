@@ -8,6 +8,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -96,7 +97,7 @@ public class FileSystemManager {
     public ArrayList<AbstractMap.SimpleImmutableEntry<String,Long>> getBackupFolderNames() {
         File[] fileArr = getBackupDirectory().listFiles();
         if(fileArr == null) fileArr= new File[0];
-        return new ArrayList<>(Stream.of(fileArr).map(f -> new AbstractMap.SimpleImmutableEntry<>(f.getName(), getFolderSize(f))).toList());
+        return Stream.of(fileArr).map(f -> new AbstractMap.SimpleImmutableEntry<>(f.getName(), getFolderSize(f))).collect(Collectors.toCollection(ArrayList::new));
     }
 
     private static long getFolderSize(File folder){
