@@ -127,6 +127,7 @@ public class Controller {
     }
 
     public void endOfStreaming() {
+        if(frameScreenShare==null) return;
         System.err.println("End of streaming");
         disposeAll();
         pictureProvider.stop();
