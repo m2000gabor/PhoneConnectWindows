@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class SegmentFramePartBuffer {
-    public static final int WAIT_TILL_FINISHED = 10;
+    public static final int WAIT_TILL_FINISHED = 10; //Number of turns to wait until the id considered to be finished
     private final Map<Long,List<UdpSegmentFramePart>> partMap = new HashMap<>();
     private final Map<Long, AtomicInteger> counterMap = new HashMap<>();
     private final Set<Long> finished = new HashSet<>(4);
@@ -29,18 +29,18 @@ public class SegmentFramePartBuffer {
 
         //if(part.isLastPiece) finished.add(part.originalFrameId);
 
-        if(part.isLastPiece && arrivedAll(part.totalFrameSize,partMap.get(part.originalFrameId))){
+        if(part.isLastPiece && isFullyArrived(part.totalFrameSize,partMap.get(part.originalFrameId))){
             finished.add(part.originalFrameId);
         }
     }
 
-    public List<SegmentFrame> getFinished(){
+    public List<SegmentFrame> pullFinished(){
         List<SegmentFrame> ret = new ArrayList<>(4);
         for(Long id : finished.stream().sorted().collect(Collectors.toList())){
             List<UdpSegmentFramePart> parts = partMap.remove(id);
             counterMap.remove(id);
             if(parts==null) continue;
-            if(!arrivedAll(parts.get(0).totalFrameSize,parts)){
+            if(!isFullyArrived(parts.get(0).totalFrameSize,parts)){
                 System.err.println("Not all udp frame arrived, segment (frameId="+parts.get(0).originalFrameId+ ") dropped.");
                 continue;
             }
@@ -54,7 +54,7 @@ public class SegmentFramePartBuffer {
         return ret;
     }
 
-    private static boolean arrivedAll(int totalSize, List<UdpSegmentFramePart> parts){
+    private static boolean isFullyArrived(int totalSize, List<UdpSegmentFramePart> parts){
         if(totalSize<0){throw new IllegalArgumentException("totalSize must be a non negative number");}
         int arrivedSizeForThisFile = parts.stream().map(p->p.data.length).reduce(Integer::sum).orElse(-1);
         return totalSize<=arrivedSizeForThisFile;

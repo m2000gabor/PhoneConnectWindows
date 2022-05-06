@@ -1,5 +1,6 @@
-package hu.elte.sbzbxr.phoneconnect.model.connection;
+package hu.elte.sbzbxr.phoneconnect.tests;
 
+import hu.elte.sbzbxr.phoneconnect.model.connection.DroppedFrameMetrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

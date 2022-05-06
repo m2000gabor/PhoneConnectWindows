@@ -91,7 +91,7 @@ public class Controller {
             //Obtain only one instance of the SystemTray object
             SystemTray tray = SystemTray.getSystemTray();
             //If the icon is a file
-            Image image = Toolkit.getDefaultToolkit().createImage("resources/icon.jpg");
+            Image image = Toolkit.getDefaultToolkit().createImage("resources/icon.png");
             //Alternative (if the icon is on the classpath):
             //Image image = Toolkit.getDefaultToolkit().createImage(getClass().getResource("icon.png"));
             trayIcon = new TrayIcon(image, "PhoneConnect notification icon");
@@ -115,6 +115,7 @@ public class Controller {
 
     public void disconnected(){
         disposeAll();
+        System.err.println("Disconnected");
         frameNotConnected = new Frame_NotConnected(this, model.getServerAddress());
         currentState = ControllerState.WELCOME_DISCONNECTED;
     }
@@ -126,6 +127,8 @@ public class Controller {
     }
 
     public void endOfStreaming() {
+        if(frameScreenShare==null) return;
+        System.err.println("End of streaming");
         disposeAll();
         pictureProvider.stop();
         currentState=ControllerState.STREAM_STOPPED;

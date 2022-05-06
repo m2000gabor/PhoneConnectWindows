@@ -52,19 +52,19 @@ public class ServerMainModel
                 FrameType type = NetworkFrameCreator.getType(i);
                 //System.out.println("Frame arrived with type: " + type);
                 switch (type) {
-                    case INTERNAL_MESSAGE -> reactToInternalMessage(i);
-                    case SEGMENT -> {
+                    case INTERNAL_MESSAGE:  reactToInternalMessage(i); break;
+                    case SEGMENT: {
                         long timestamp_beforeDeserialization = System.currentTimeMillis();
                         SegmentFrame segmentFrame = SegmentFrame.deserialize(type,i);
                         long timestamp_afterDeserialization = System.currentTimeMillis();
                         segmentFrame.addTimestamp("beforeDeserialization",timestamp_beforeDeserialization);
                         segmentFrame.addTimestamp("afterDeserialization",timestamp_afterDeserialization);
                         reactToSegmentArrivedRequest(segmentFrame);
-                    }
-                    case NOTIFICATION -> reactToNotificationArrived(NotificationFrame.deserialize(i));
-                    case FILE -> reactToIncomingFileTransfer(FileFrame.deserialize(type,i));
-                    case BACKUP_FILE -> reactToIncomingBackup(BackupFileFrame.deserialize(type,i));
-                    default -> throw new RuntimeException("Unhandled type");
+                    }break;
+                    case NOTIFICATION: reactToNotificationArrived(NotificationFrame.deserialize(i));break;
+                    case FILE: reactToIncomingFileTransfer(FileFrame.deserialize(type,i));break;
+                    case BACKUP_FILE: reactToIncomingBackup(BackupFileFrame.deserialize(type,i));break;
+                    default: throw new RuntimeException("Unhandled type");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -87,7 +87,7 @@ public class ServerMainModel
                 continue;
             }
 
-            for(SegmentFrame segmentFrame : buffer.getFinished()){
+            for(SegmentFrame segmentFrame : buffer.pullFinished()){
                 reactToSegmentArrivedRequest(segmentFrame);
             }
         }
@@ -105,12 +105,12 @@ public class ServerMainModel
         MessageFrame messageFrame = MessageFrame.deserialize(inputStream);
         MessageType type = messageFrame.messageType;
         switch (type){
-            default -> throw new IllegalArgumentException("Unknown type of internal message");
-            case PING -> pingMessageArrived(PingMessageFrame.deserialize(inputStream));
-            case RESTORE_GET_AVAILABLE -> restoreGetMessageArrived();
-            case RESTORE_START_RESTORE -> restoreStartMessageArrived(StartRestoreMessageFrame.deserialize(inputStream));
-            case START_OF_STREAM -> controller.startStreaming();
-            case END_OF_STREAM -> controller.endOfStreaming();
+            default: throw new IllegalArgumentException("Unknown type of internal message");
+            case PING: pingMessageArrived(PingMessageFrame.deserialize(inputStream));break;
+            case RESTORE_GET_AVAILABLE: restoreGetMessageArrived();break;
+            case RESTORE_START_RESTORE: restoreStartMessageArrived(StartRestoreMessageFrame.deserialize(inputStream));break;
+            case START_OF_STREAM: controller.startStreaming();break;
+            case END_OF_STREAM: controller.endOfStreaming();break;
         }
 
     }
